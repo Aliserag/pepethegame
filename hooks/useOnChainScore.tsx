@@ -27,7 +27,6 @@ export default function useOnChainScore() {
         abi: leaderboardAbi,
         functionName: "getScore",
         args: [address],
-        chainId: baseSepolia.id,
       })) as bigint;
 
       return Number(score);
@@ -75,7 +74,6 @@ export default function useOnChainScore() {
           abi: leaderboardAbi,
           functionName: "submitScore",
           args: [BigInt(score)],
-          chainId: baseSepolia.id,
         });
 
         const hash = await walletClient.writeContract(request);
