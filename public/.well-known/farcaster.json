@@ -8,11 +8,13 @@
     "version": "1",
     "name": "FlowPepe",
     "iconUrl": "https://www.flowpepe.com/pepe.gif",
+    "heroImageUrl": "https://www.flowpepe.com/logo.png",
     "homeUrl": "https://www.flowpepe.com",
     "splashImageUrl": "https://www.flowpepe.com/logo.png",
     "splashBackgroundColor": "#ded895",
+    "tagline": "WAGMI! Help Pepe make it and earn on-chain points",
     "description": "WAGMI! Help Pepe make it through red candlestick obstacles and earn points. The ultimate crypto Flappy Bird on Base!",
-    "categories": ["games", "casual", "entertainment"],
-    "tags": ["wagmi", "pepe", "base", "game", "flappy-bird", "crypto", "meme", "arcade", "competitive", "onchain", "web3", "farcaster"]
+    "categories": ["games", "casual"],
+    "tags": ["wagmi", "pepe", "base", "onchain", "game"]
   }
 }
