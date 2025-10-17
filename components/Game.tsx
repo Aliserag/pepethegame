@@ -19,6 +19,7 @@ export default function Game() {
   const { totalScore, topScore, saveScore } = useScores(userId);
   const {
     submitScore: submitOnChainScore,
+    getOnChainScore,
     isSubmitting,
     submissionError,
     clearError,
@@ -68,9 +69,26 @@ export default function Game() {
     resetGame();
     setShowGameOver(false);
     setScoreSubmitted(false);
+    setIsNewHighScore(false);
+    setCurrentOnChainScore(0);
     clearError();
     handleWindowClick();
   };
+
+  const [currentOnChainScore, setCurrentOnChainScore] = useState(0);
+  const [isNewHighScore, setIsNewHighScore] = useState(false);
+
+  // Check if this is a new high score when game ends
+  useEffect(() => {
+    const checkHighScore = async () => {
+      if (isGameOver && isConnected && finalScore > 0) {
+        const onChainScore = await getOnChainScore();
+        setCurrentOnChainScore(onChainScore);
+        setIsNewHighScore(finalScore > onChainScore);
+      }
+    };
+    checkHighScore();
+  }, [isGameOver, isConnected, finalScore, getOnChainScore]);
 
   const handleSubmitOnChain = async () => {
     if (finalScore > 0 && !scoreSubmitted) {
@@ -162,81 +180,108 @@ export default function Game() {
         </div>
       )}
       {showGameOver && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-95 p-4 z-50 overflow-y-auto">
-          <div className="w-full max-w-4xl py-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column - Game Over Info */}
-              <div className="flex flex-col items-center justify-center space-y-6">
-                <h1
-                  className="text-white text-4xl md:text-5xl font-bold"
-                  style={{ fontFamily: "'Press Start 2P', cursive" }}
-                >
-                  Game Over!
-                </h1>
+        <div className="absolute inset-0 flex flex-col items-center justify-start bg-black bg-opacity-95 p-4 z-50 overflow-y-auto">
+          <div className="max-w-2xl w-full space-y-4 pt-8">
+            <h1
+              className="text-white text-4xl md:text-6xl font-bold mb-4 text-center"
+              style={{ fontFamily: "'Press Start 2P', cursive" }}
+            >
+              Game Over!
+            </h1>
 
-                <div
-                  className="text-yellow-400 text-3xl md:text-4xl"
-                  style={{ fontFamily: "'Press Start 2P', cursive" }}
-                >
-                  Score: {finalScore}
-                </div>
+            <div
+              className="text-yellow-400 text-2xl md:text-3xl mb-6 text-center"
+              style={{ fontFamily: "'Press Start 2P', cursive" }}
+            >
+              Score: {finalScore}
+            </div>
 
-                <button
-                  onClick={handleTryAgainClick}
-                  className="bg-red-700 hover:bg-red-900 text-white font-bold py-3 px-8 rounded-lg text-lg md:text-xl w-full max-w-sm"
-                  style={{ fontFamily: "'Press Start 2P', cursive" }}
-                >
-                  Try Again
-                </button>
+            {/* Show if it's a new high score */}
+            {isConnected && isNewHighScore && !scoreSubmitted && (
+              <div
+                className="text-green-400 text-lg mb-4 text-center animate-pulse"
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
+              >
+                🎉 New High Score! 🎉
+              </div>
+            )}
 
-                {/* On-chain submission */}
-                <div className="w-full max-w-sm">
-                  {!isConnected && (
-                    <div
-                      className="text-gray-400 text-xs text-center mb-2"
+            {/* Current on-chain record */}
+            {isConnected && currentOnChainScore > 0 && (
+              <div
+                className="text-gray-400 text-sm mb-4 text-center"
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
+              >
+                Your Record: {currentOnChainScore}
+              </div>
+            )}
+
+            <button
+              onClick={handleTryAgainClick}
+              className="bg-red-700 hover:bg-red-900 text-white font-bold py-3 px-6 rounded-lg text-xl md:text-2xl mx-auto block mb-6"
+              style={{ fontFamily: "'Press Start 2P', cursive" }}
+            >
+              Try Again
+            </button>
+
+            {/* On-chain submission */}
+            {!isConnected && (
+              <div
+                className="text-gray-400 text-xs mb-4 text-center"
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
+              >
+                Connect wallet to submit score on-chain
+              </div>
+            )}
+
+            {isConnected && finalScore > 0 && (
+              <div className="mb-6">
+                {!scoreSubmitted ? (
+                  <>
+                    {isNewHighScore && (
+                      <div
+                        className="text-white text-sm mb-3 text-center"
+                        style={{ fontFamily: "'Press Start 2P', cursive" }}
+                      >
+                        Save your new record to the blockchain!
+                      </div>
+                    )}
+                    <button
+                      onClick={handleSubmitOnChain}
+                      disabled={isSubmitting || !isNewHighScore}
+                      className={`${
+                        isSubmitting || !isNewHighScore
+                          ? "bg-gray-600"
+                          : "bg-green-600 hover:bg-green-700"
+                      } text-white font-bold py-3 px-6 rounded-lg text-sm md:text-base w-full max-w-md mx-auto block`}
                       style={{ fontFamily: "'Press Start 2P', cursive" }}
                     >
-                      Connect wallet to save score on-chain
-                    </div>
-                  )}
-
-                  {isConnected && finalScore > 0 && (
-                    <div className="space-y-2">
-                      {!scoreSubmitted ? (
-                        <button
-                          onClick={handleSubmitOnChain}
-                          disabled={isSubmitting}
-                          className={`${
-                            isSubmitting
-                              ? "bg-gray-600"
-                              : "bg-green-600 hover:bg-green-700"
-                          } text-white font-bold py-3 px-6 rounded-lg text-sm w-full`}
-                          style={{ fontFamily: "'Press Start 2P', cursive" }}
-                        >
-                          {isSubmitting ? "Submitting..." : "Submit Score 🏆"}
-                        </button>
-                      ) : (
-                        <div
-                          className="text-green-400 text-sm text-center"
-                          style={{ fontFamily: "'Press Start 2P', cursive" }}
-                        >
-                          ✅ Score Submitted!
-                        </div>
-                      )}
-                      {submissionError && (
-                        <div className="text-red-400 text-xs text-center">
-                          {submissionError}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                      {isSubmitting
+                        ? "Submitting..."
+                        : isNewHighScore
+                        ? "Submit to Leaderboard 🏆"
+                        : "Score not higher than record"}
+                    </button>
+                  </>
+                ) : (
+                  <div
+                    className="text-green-400 text-sm md:text-base text-center"
+                    style={{ fontFamily: "'Press Start 2P', cursive" }}
+                  >
+                    ✅ Score Submitted!
+                  </div>
+                )}
+                {submissionError && (
+                  <div className="text-red-400 text-xs mt-2 text-center">
+                    {submissionError}
+                  </div>
+                )}
               </div>
+            )}
 
-              {/* Right Column - Leaderboard */}
-              <div className="flex items-center justify-center">
-                <Leaderboard />
-              </div>
+            {/* Leaderboard */}
+            <div className="mt-6">
+              <Leaderboard />
             </div>
           </div>
         </div>
