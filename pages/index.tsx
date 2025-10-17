@@ -15,7 +15,7 @@ const Home: NextPage = () => {
       }}
     >
       <Head>
-        <title>FlowPepe - Farcaster Mini App</title>
+        <title>FlowPepe - WAGMI! Help Pepe Make It 🐸</title>
         <link rel="icon" href="pepe.gif" />
       </Head>
 

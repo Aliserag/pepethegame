@@ -5,7 +5,7 @@ export default function Document() {
     version: "1",
     imageUrl: "https://www.flowpepe.com/logo.png",
     button: {
-      title: "Play FlowPepe",
+      title: "WAGMI - Play Now! 🐸",
       action: {
         type: "launch_frame",
         name: "FlowPepe",
@@ -30,19 +30,19 @@ export default function Document() {
         <meta property="fc:frame:button:1:action" content="launch_frame" />
 
         {/* Open Graph Tags */}
-        <meta property="og:title" content="FlowPepe - Farcaster Mini App" />
+        <meta property="og:title" content="FlowPepe - WAGMI! 🐸" />
         <meta
           property="og:description"
-          content="Help Pepe navigate through red candlestick obstacles in this addictive Flappy Bird-style game!"
+          content="Help Pepe make it through red candlestick obstacles and earn points! The ultimate crypto Flappy Bird on Base. WAGMI! 🚀"
         />
         <meta property="og:image" content="https://www.flowpepe.com/logo.png" />
 
         {/* Twitter Card Tags */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="FlowPepe" />
+        <meta name="twitter:title" content="FlowPepe - WAGMI! 🐸" />
         <meta
           name="twitter:description"
-          content="Help Pepe navigate through red candlestick obstacles!"
+          content="Help Pepe make it and earn points! Ultimate crypto Flappy Bird on Base. WAGMI! 🚀"
         />
         <meta name="twitter:image" content="https://www.flowpepe.com/logo.png" />
 
