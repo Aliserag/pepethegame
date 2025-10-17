@@ -52,6 +52,11 @@ function createInjectedConnector() {
       const accounts = await provider.request({ method: 'eth_accounts' })
       return accounts.length > 0
     },
+    async getProvider() {
+      if (typeof window === 'undefined') return undefined
+
+      return (window as any).ethereum
+    },
     async switchChain({ chainId }) {
       if (typeof window === 'undefined') throw new Error('Window not available')
 
