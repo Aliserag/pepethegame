@@ -6,6 +6,12 @@ const WalletConnect: React.FC = () => {
   const { connect, connectors, error } = useConnect();
   const { disconnect } = useDisconnect();
   const [showConnectorList, setShowConnectorList] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Prevent hydration mismatch by only rendering after mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Debug logging
   useEffect(() => {
@@ -55,6 +61,21 @@ const WalletConnect: React.FC = () => {
   const handleDisconnect = () => {
     disconnect();
   };
+
+  // Don't render until mounted on client to avoid hydration mismatch
+  if (!isMounted) {
+    return (
+      <div className="mt-4">
+        <button
+          disabled
+          className="bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm w-full opacity-50"
+          style={{ fontFamily: "'Press Start 2P', cursive" }}
+        >
+          Loading...
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-4">
