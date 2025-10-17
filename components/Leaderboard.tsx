@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { usePublicClient } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
-import leaderboardAbi from "../deployments/FlowPepeLeaderboard.abi.json";
+import leaderboardAbi from "../lib/FlowPepeLeaderboard.abi.json";
 
 interface LeaderboardEntry {
   address: string;

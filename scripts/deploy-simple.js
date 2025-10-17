@@ -132,12 +132,21 @@ async function main() {
     const deploymentFile = path.join(deploymentsDir, `${network}.json`);
     fs.writeFileSync(deploymentFile, JSON.stringify(deploymentInfo, null, 2));
 
-    // Save ABI
+    // Save ABI to deployments folder
     const abiFile = path.join(deploymentsDir, 'FlowPepeLeaderboard.abi.json');
     fs.writeFileSync(abiFile, JSON.stringify(abi, null, 2));
 
+    // Also save ABI to lib folder (tracked in git)
+    const libDir = path.join(__dirname, '..', 'lib');
+    if (!fs.existsSync(libDir)) {
+      fs.mkdirSync(libDir, { recursive: true });
+    }
+    const libAbiFile = path.join(libDir, 'FlowPepeLeaderboard.abi.json');
+    fs.writeFileSync(libAbiFile, JSON.stringify(abi, null, 2));
+
     console.log(`\n📝 Deployment info saved to: ${deploymentFile}`);
     console.log(`📝 ABI saved to: ${abiFile}`);
+    console.log(`📝 ABI also saved to: ${libAbiFile} (tracked in git)`);
 
     console.log('\n✨ Add this to your .env file:');
     console.log(`NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS=${receipt.contractAddress}`);

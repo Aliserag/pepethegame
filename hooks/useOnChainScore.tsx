@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
-import leaderboardAbi from "../deployments/FlowPepeLeaderboard.abi.json";
+import leaderboardAbi from "../lib/FlowPepeLeaderboard.abi.json";
 
 export default function useOnChainScore() {
   const { address, isConnected } = useAccount();
