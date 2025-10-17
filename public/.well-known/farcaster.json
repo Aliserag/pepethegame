@@ -1,0 +1,18 @@
+{
+  "accountAssociation": {
+    "header": "TODO",
+    "payload": "TODO",
+    "signature": "TODO"
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "FlowPepe",
+    "iconUrl": "https://your-domain.com/pepe.gif",
+    "homeUrl": "https://your-domain.com",
+    "splashImageUrl": "https://your-domain.com/logo.png",
+    "splashBackgroundColor": "#ded895",
+    "description": "Help Pepe navigate through red candlestick obstacles in this addictive Flappy Bird-style game!",
+    "categories": ["games", "casual"],
+    "tags": ["game", "flappy-bird", "pepe", "farcaster", "base"]
+  }
+}
