@@ -12,8 +12,13 @@ const Footer: React.FC<FooterProps> = ({ isMuted, toggleMute }) => {
   const {
     clickCount,
     bestClickCount,
+    rounds,
     pipe: { distance },
   } = useGame();
+
+  // Get current score from rounds (pipes passed)
+  const currentRound = rounds[rounds.length - 1];
+  const currentScore = currentRound?.score || 0;
 
   return (
     <footer className="w-full h-28 bg-[#ded895] relative rounded-b-lg">
@@ -36,8 +41,8 @@ const Footer: React.FC<FooterProps> = ({ isMuted, toggleMute }) => {
         ></motion.div>
       </div>
       <div className="flex p-2 uppercase font-mono font-semibold items-center justify-around h-[calc(100%-2.5rem)] text-xl text-green-900 flex-wrap">
-        <div>Best: {bestClickCount}</div>
-        <div>Points: {clickCount}</div>
+        <div>Score: {currentScore}</div>
+        <div>Clicks: {clickCount}</div>
         <div className="w-full text-center text-lg">
           Speed: {(distance / 10).toFixed(1)}
         </div>

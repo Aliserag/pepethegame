@@ -18,17 +18,22 @@ const Leaderboard: React.FC = () => {
     .NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS as `0x${string}`;
 
   useEffect(() => {
+    console.log("=== Leaderboard Debug ===");
+    console.log("Contract Address:", contractAddress);
+    console.log("Public Client:", !!publicClient);
     loadLeaderboard();
   }, []);
 
   async function loadLeaderboard() {
     if (!publicClient || !contractAddress) {
+      console.log("Leaderboard: Missing publicClient or contractAddress");
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
+      console.log("Leaderboard: Fetching top scores...");
 
       // Read top 10 scores from contract
       const result = (await publicClient.readContract({
@@ -39,6 +44,7 @@ const Leaderboard: React.FC = () => {
       })) as [readonly string[], readonly bigint[]];
 
       const [addresses, scores] = result;
+      console.log("Leaderboard: Fetched", addresses.length, "scores");
 
       // Format leaderboard data
       const leaderboard: LeaderboardEntry[] = addresses.map(
@@ -49,6 +55,7 @@ const Leaderboard: React.FC = () => {
         })
       );
 
+      console.log("Leaderboard data:", leaderboard);
       setTopScores(leaderboard);
     } catch (error) {
       console.error("Error loading leaderboard:", error);

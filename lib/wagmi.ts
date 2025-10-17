@@ -69,14 +69,18 @@ function createInjectedConnector() {
       return config.chains.find(c => c.id === chainId)!
     },
     onAccountsChanged(accounts) {
-      if (accounts.length === 0) this.onDisconnect?.()
-      else this.onConnect?.({ accounts: accounts as `0x${string}`[] })
+      // Event handlers - wagmi will handle these internally
+      if (accounts.length === 0) {
+        config.emitter.emit('disconnect', {})
+      } else {
+        config.emitter.emit('change', { accounts: accounts as `0x${string}`[] })
+      }
     },
     onChainChanged(chain) {
-      this.onConnect?.({ chainId: parseInt(chain as string, 16) })
+      config.emitter.emit('change', { chainId: parseInt(chain as string, 16) })
     },
     onDisconnect() {
-      this.onDisconnect?.()
+      config.emitter.emit('disconnect', {})
     },
     async setup() {
       if (typeof window === 'undefined') return
