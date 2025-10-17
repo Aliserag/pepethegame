@@ -1857,7 +1857,7 @@
   dependencies:
     "@types/node" "*"
 
-"@wagmi/connectors@6.0.1":
+"@wagmi/connectors@^6.0.1", "@wagmi/connectors@6.0.1":
   version "6.0.1"
   resolved "https://registry.npmjs.org/@wagmi/connectors/-/connectors-6.0.1.tgz"
   integrity sha512-ZHvC9GIncOViz6Fi+oCc+8oin+U+GfCKNLj90aNxve8CLw++vQBEcivPIq1mQq2QNo6lay7yjNyGInPoOEIkSg==
@@ -1872,7 +1872,7 @@
     cbw-sdk "npm:@coinbase/wallet-sdk@3.9.3"
     porto "0.2.19"
 
-"@wagmi/core@2.22.1":
+"@wagmi/core@^2.22.1", "@wagmi/core@2.22.1":
   version "2.22.1"
   resolved "https://registry.npmjs.org/@wagmi/core/-/core-2.22.1.tgz"
   integrity sha512-cG/xwQWsBEcKgRTkQVhH29cbpbs/TdcUJVFXCyri3ZknxhMyGv0YEjTcrNpRgt2SaswL1KrvslSNYKKo+5YEAg==
