@@ -3,14 +3,14 @@ import { Html, Head, Main, NextScript } from "next/document";
 export default function Document() {
   const miniappEmbed = {
     version: "1",
-    imageUrl: "https://your-domain.com/logo.png",
+    imageUrl: "https://www.flowpepe.com/logo.png",
     button: {
       title: "Play FlowPepe",
       action: {
         type: "launch_frame",
         name: "FlowPepe",
-        url: "https://your-domain.com",
-        splashImageUrl: "https://your-domain.com/logo.png",
+        url: "https://www.flowpepe.com",
+        splashImageUrl: "https://www.flowpepe.com/logo.png",
         splashBackgroundColor: "#ded895",
       },
     },
@@ -25,7 +25,7 @@ export default function Document() {
           content={JSON.stringify(miniappEmbed)}
         />
         <meta property="fc:frame" content="vNext" />
-        <meta property="fc:frame:image" content="https://your-domain.com/logo.png" />
+        <meta property="fc:frame:image" content="https://www.flowpepe.com/logo.png" />
         <meta property="fc:frame:button:1" content="Play FlowPepe" />
         <meta property="fc:frame:button:1:action" content="launch_frame" />
 
@@ -35,7 +35,7 @@ export default function Document() {
           property="og:description"
           content="Help Pepe navigate through red candlestick obstacles in this addictive Flappy Bird-style game!"
         />
-        <meta property="og:image" content="https://your-domain.com/logo.png" />
+        <meta property="og:image" content="https://www.flowpepe.com/logo.png" />
 
         {/* Twitter Card Tags */}
         <meta name="twitter:card" content="summary_large_image" />
@@ -44,7 +44,7 @@ export default function Document() {
           name="twitter:description"
           content="Help Pepe navigate through red candlestick obstacles!"
         />
-        <meta name="twitter:image" content="https://your-domain.com/logo.png" />
+        <meta name="twitter:image" content="https://www.flowpepe.com/logo.png" />
 
         {/* Google Fonts */}
         <link

@@ -7,9 +7,9 @@
   "miniapp": {
     "version": "1",
     "name": "FlowPepe",
-    "iconUrl": "https://your-domain.com/pepe.gif",
-    "homeUrl": "https://your-domain.com",
-    "splashImageUrl": "https://your-domain.com/logo.png",
+    "iconUrl": "https://www.flowpepe.com/pepe.gif",
+    "homeUrl": "https://www.flowpepe.com",
+    "splashImageUrl": "https://www.flowpepe.com/logo.png",
     "splashBackgroundColor": "#ded895",
     "description": "Help Pepe navigate through red candlestick obstacles in this addictive Flappy Bird-style game!",
     "categories": ["games", "casual"],
