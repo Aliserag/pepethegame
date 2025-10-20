@@ -6,12 +6,13 @@ import leaderboardAbi from "../lib/FlowPepeLeaderboard.abi.json";
 export default function useOnChainScore() {
   const { address, isConnected, chainId } = useAccount();
   const publicClient = usePublicClient({ chainId: baseSepolia.id });
-  const { data: walletClient } = useWalletClient({ chainId: baseSepolia.id });
+  const { data: walletClient } = useWalletClient(); // Don't specify chainId here - get client for current chain
   const { switchChainAsync } = useSwitchChain();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
-  const contractAddress = process.env.NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS as `0x${string}`;
+  // Hardcode the contract address as fallback if env var doesn't work
+  const contractAddress = (process.env.NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS || "0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c") as `0x${string}`;
 
   /**
    * Get the current on-chain score for the connected wallet
@@ -69,6 +70,9 @@ export default function useOnChainScore() {
           await switchChainAsync({ chainId: baseSepolia.id });
           console.log("Successfully switched to Base Sepolia");
           setSubmissionError(null); // Clear the switching message
+
+          // Wait a moment for wallet client to update after chain switch
+          await new Promise(resolve => setTimeout(resolve, 1000));
         } catch (error: any) {
           console.error("Error switching chain:", error);
           if (error.message?.includes("rejected") || error.message?.includes("denied")) {
@@ -82,7 +86,9 @@ export default function useOnChainScore() {
       }
 
       if (!walletClient) {
-        setSubmissionError("Wallet client not initialized. Please try reconnecting your wallet.");
+        console.log("Wallet client details:", { walletClient, isConnected, address, chainId });
+        setSubmissionError("Wallet client not ready. Please try again in a moment.");
+        setIsSubmitting(false);
         return false;
       }
 
