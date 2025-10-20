@@ -4,7 +4,7 @@ import { baseSepolia } from "wagmi/chains";
 import leaderboardAbi from "../lib/FlowPepeLeaderboard.abi.json";
 
 export default function useOnChainScore() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
   const publicClient = usePublicClient({ chainId: baseSepolia.id });
   const { data: walletClient } = useWalletClient({ chainId: baseSepolia.id });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +45,10 @@ export default function useOnChainScore() {
       console.log("=== Submit Score Debug ===");
       console.log("isConnected:", isConnected);
       console.log("address:", address);
+      console.log("chainId:", chainId);
+      console.log("expected chainId:", baseSepolia.id);
       console.log("walletClient:", !!walletClient);
+      console.log("publicClient:", !!publicClient);
       console.log("contractAddress:", contractAddress);
 
       if (!isConnected) {
@@ -55,6 +58,11 @@ export default function useOnChainScore() {
 
       if (!address) {
         setSubmissionError("No wallet address found");
+        return false;
+      }
+
+      if (chainId !== baseSepolia.id) {
+        setSubmissionError(`Please switch to Base Sepolia network. Currently on chain ID: ${chainId}`);
         return false;
       }
 
@@ -133,7 +141,7 @@ export default function useOnChainScore() {
         return false;
       }
     },
-    [isConnected, address, walletClient, contractAddress, publicClient, getOnChainScore]
+    [isConnected, address, chainId, walletClient, contractAddress, publicClient, getOnChainScore]
   );
 
   /**

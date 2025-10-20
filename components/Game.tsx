@@ -40,6 +40,7 @@ export default function Game() {
     resetGame,
     clickCount,
     bestClickCount,
+    lastGameScore,
   } = useGame();
   const [ref, window] = useElementSize();
   const [isMuted, setIsMuted] = useState(false);
@@ -112,14 +113,14 @@ export default function Game() {
   useEffect(() => {
     if (isGameOver) {
       setShowGameOver(true);
-      // Save the score when game is over (use bestClickCount which is the latest game's score)
-      if (bestClickCount > 0) {
-        saveScore(bestClickCount);
-        setFinalScore(bestClickCount);
+      // Save the score when game is over (use lastGameScore which is the current game's score)
+      if (lastGameScore > 0) {
+        saveScore(lastGameScore);
+        setFinalScore(lastGameScore);
         setScoreSubmitted(false);
       }
     }
-  }, [isGameOver, bestClickCount]);
+  }, [isGameOver, lastGameScore]);
 
   return (
     <div className="relative w-full h-full">
@@ -171,12 +172,6 @@ export default function Game() {
             <WalletConnect />
             <div
               className="mt-4 text-white text-sm"
-              style={{ fontFamily: "'Press Start 2P', cursive" }}
-            >
-              Total Score: {totalScore}
-            </div>
-            <div
-              className="mt-2 text-white text-sm"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
               Top Score: {topScore}

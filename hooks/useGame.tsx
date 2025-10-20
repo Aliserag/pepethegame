@@ -70,6 +70,7 @@ const defaultState = {
   },
   clickCount: 0, // Initialize clickCount
   bestClickCount: 0, // Initialize bestClickCount
+  lastGameScore: 0, // Track the score of the most recent game
 };
 
 type Size = {
@@ -147,6 +148,7 @@ interface GameState {
   };
   clickCount: number; // State to track current clicks
   bestClickCount: number; // State to track the best clicks
+  lastGameScore: number; // Score of the most recent game
 }
 
 type StateDraft = WritableDraft<GameState>;
@@ -321,6 +323,9 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
       draft.isGameOver = true;
       draft.bird.animate.rotate = [0, 540];
 
+      // Save the current game's score before resetting
+      draft.lastGameScore = draft.clickCount;
+
       // Update bestClickCount if current clickCount is greater
       if (draft.clickCount > draft.bestClickCount) {
         draft.bestClickCount = draft.clickCount;
@@ -367,6 +372,7 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
         resetGame,
         clickCount: state.clickCount, // Expose clickCount
         bestClickCount: state.bestClickCount, // Expose bestClickCount
+        lastGameScore: state.lastGameScore, // Expose lastGameScore
       }}
     >
       {children}

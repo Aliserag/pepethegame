@@ -12,7 +12,7 @@ interface LeaderboardEntry {
 const Leaderboard: React.FC = () => {
   const [topScores, setTopScores] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: baseSepolia.id });
 
   const contractAddress = process.env
     .NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS as `0x${string}`;
