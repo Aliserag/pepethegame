@@ -28,6 +28,7 @@ export default function useOnChainScore() {
         abi: leaderboardAbi,
         functionName: "getScore",
         args: [address],
+        chainId: baseSepolia.id, // Explicitly set chain to Base Sepolia
       })) as bigint;
 
       return Number(score);
@@ -117,13 +118,14 @@ export default function useOnChainScore() {
           return false;
         }
 
-        // Submit transaction
+        // Submit transaction - explicitly specify chain
         const { request } = await publicClient!.simulateContract({
           account: address,
           address: contractAddress,
           abi: leaderboardAbi,
           functionName: "submitScore",
           args: [BigInt(score)],
+          chain: baseSepolia, // Explicitly set chain to Base Sepolia
         });
 
         const hash = await walletClient.writeContract(request);
