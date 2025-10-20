@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import { useAccount, usePublicClient, useWalletClient, useSwitchChain } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 import leaderboardAbi from "../lib/FlowPepeLeaderboard.abi.json";
 
@@ -7,11 +7,11 @@ export default function useOnChainScore() {
   const { address, isConnected, chainId } = useAccount();
   const publicClient = usePublicClient({ chainId: baseSepolia.id });
   const { data: walletClient } = useWalletClient({ chainId: baseSepolia.id });
+  const { switchChainAsync } = useSwitchChain();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
-  const contractAddress = process.env
-    .NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS as `0x${string}`;
+  const contractAddress = process.env.NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS as `0x${string}`;
 
   /**
    * Get the current on-chain score for the connected wallet
@@ -61,9 +61,24 @@ export default function useOnChainScore() {
         return false;
       }
 
+      // Auto-switch to Base Sepolia if on wrong network
       if (chainId !== baseSepolia.id) {
-        setSubmissionError(`Please switch to Base Sepolia network. Currently on chain ID: ${chainId}`);
-        return false;
+        console.log(`Wrong network detected (${chainId}), switching to Base Sepolia...`);
+        setSubmissionError("Switching to Base Sepolia network...");
+        try {
+          await switchChainAsync({ chainId: baseSepolia.id });
+          console.log("Successfully switched to Base Sepolia");
+          setSubmissionError(null); // Clear the switching message
+        } catch (error: any) {
+          console.error("Error switching chain:", error);
+          if (error.message?.includes("rejected") || error.message?.includes("denied")) {
+            setSubmissionError(`Network switch cancelled. Please switch to Base Sepolia in your wallet.`);
+          } else {
+            setSubmissionError(`Failed to switch network. Please switch to Base Sepolia manually in your wallet.`);
+          }
+          setIsSubmitting(false);
+          return false;
+        }
       }
 
       if (!walletClient) {
@@ -141,7 +156,7 @@ export default function useOnChainScore() {
         return false;
       }
     },
-    [isConnected, address, chainId, walletClient, contractAddress, publicClient, getOnChainScore]
+    [isConnected, address, chainId, walletClient, contractAddress, publicClient, getOnChainScore, switchChainAsync]
   );
 
   /**

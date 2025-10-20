@@ -14,8 +14,7 @@ const Leaderboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const publicClient = usePublicClient({ chainId: baseSepolia.id });
 
-  const contractAddress = process.env
-    .NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS as `0x${string}`;
+  const contractAddress = process.env.NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS as `0x${string}`;
 
   useEffect(() => {
     console.log("=== Leaderboard Debug ===");
