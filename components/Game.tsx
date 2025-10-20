@@ -11,12 +11,18 @@ import WalletConnect from "./WalletConnect";
 import useScores from "../hooks/useScores";
 import useOnChainScore from "../hooks/useOnChainScore";
 import Leaderboard from "./Leaderboard";
-import { useAccount } from "wagmi";
+import { useAccount, useConnect } from "wagmi";
 import _ from "lodash";
 
 export default function Game() {
   const { user } = useFarcaster();
   const { address, isConnected: isWalletConnected } = useAccount();
+  const { connect, connectors } = useConnect();
+
+  // Find Farcaster connector
+  const farcasterConnector = connectors.find(
+    (connector) => connector.id === "farcasterMiniApp"
+  );
 
   // Prioritize Farcaster FID if available, otherwise use wallet address
   const userId = user?.fid?.toString() || address || "anonymous";
@@ -103,6 +109,17 @@ export default function Game() {
       if (success) {
         setScoreSubmitted(true);
       }
+    }
+  };
+
+  const handleConnectWallet = () => {
+    // Connect to Farcaster wallet if available, otherwise show connector selection
+    if (farcasterConnector) {
+      console.log("Connecting to Farcaster wallet...");
+      connect({ connector: farcasterConnector });
+    } else if (connectors.length > 0) {
+      console.log("Connecting to first available wallet...");
+      connect({ connector: connectors[0] });
     }
   };
 
@@ -226,12 +243,13 @@ export default function Game() {
 
             {/* On-chain submission */}
             {!isConnected && (
-              <div
-                className="text-gray-400 text-xs text-center"
+              <button
+                onClick={handleConnectWallet}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-sm w-full max-w-md"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
-                Connect wallet to submit score on-chain
-              </div>
+                Connect Wallet to Submit Score 🏆
+              </button>
             )}
 
             {isConnected && finalScore > 0 && (
