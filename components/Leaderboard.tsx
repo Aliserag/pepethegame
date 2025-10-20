@@ -41,7 +41,6 @@ const Leaderboard: React.FC = () => {
         abi: leaderboardAbi,
         functionName: "getTopScores",
         args: [10n],
-        chainId: baseSepolia.id, // Explicitly set chain to Base Sepolia
       })) as [readonly string[], readonly bigint[]];
 
       const [addresses, scores] = result;

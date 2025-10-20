@@ -28,7 +28,6 @@ export default function useOnChainScore() {
         abi: leaderboardAbi,
         functionName: "getScore",
         args: [address],
-        chainId: baseSepolia.id, // Explicitly set chain to Base Sepolia
       })) as bigint;
 
       return Number(score);
