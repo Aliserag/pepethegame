@@ -11,11 +11,15 @@ import WalletConnect from "./WalletConnect";
 import useScores from "../hooks/useScores";
 import useOnChainScore from "../hooks/useOnChainScore";
 import Leaderboard from "./Leaderboard";
+import { useAccount } from "wagmi";
 import _ from "lodash";
 
 export default function Game() {
   const { user } = useFarcaster();
-  const userId = user?.fid?.toString() || "anonymous";
+  const { address, isConnected: isWalletConnected } = useAccount();
+
+  // Prioritize Farcaster FID if available, otherwise use wallet address
+  const userId = user?.fid?.toString() || address || "anonymous";
   const { totalScore, topScore, saveScore } = useScores(userId);
   const {
     submitScore: submitOnChainScore,
@@ -34,6 +38,8 @@ export default function Game() {
     rounds,
     isGameOver,
     resetGame,
+    clickCount,
+    bestClickCount,
   } = useGame();
   const [ref, window] = useElementSize();
   const [isMuted, setIsMuted] = useState(false);
@@ -106,15 +112,14 @@ export default function Game() {
   useEffect(() => {
     if (isGameOver) {
       setShowGameOver(true);
-      // Save the score when game is over
-      const currentRound = _.last(rounds);
-      if (currentRound) {
-        saveScore(currentRound.score);
-        setFinalScore(currentRound.score);
+      // Save the score when game is over (use bestClickCount which is the latest game's score)
+      if (bestClickCount > 0) {
+        saveScore(bestClickCount);
+        setFinalScore(bestClickCount);
         setScoreSubmitted(false);
       }
     }
-  }, [isGameOver]);
+  }, [isGameOver, bestClickCount]);
 
   return (
     <div className="relative w-full h-full">
@@ -180,17 +185,17 @@ export default function Game() {
         </div>
       )}
       {showGameOver && (
-        <div className="absolute inset-0 flex flex-col items-center justify-start bg-black bg-opacity-95 p-4 z-50 overflow-y-auto">
-          <div className="max-w-2xl w-full space-y-4 pt-8">
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-95 p-4 z-50 overflow-y-auto">
+          <div className="max-w-md w-full space-y-6 flex flex-col items-center">
             <h1
-              className="text-white text-4xl md:text-6xl font-bold mb-4 text-center"
+              className="text-white text-4xl md:text-5xl font-bold text-center"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
               Game Over!
             </h1>
 
             <div
-              className="text-yellow-400 text-2xl md:text-3xl mb-6 text-center"
+              className="text-yellow-400 text-2xl md:text-3xl text-center"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
               Score: {finalScore}
@@ -199,7 +204,7 @@ export default function Game() {
             {/* Show if it's a new high score */}
             {isConnected && isNewHighScore && !scoreSubmitted && (
               <div
-                className="text-green-400 text-lg mb-4 text-center animate-pulse"
+                className="text-green-400 text-lg text-center animate-pulse"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
                 🎉 New High Score! 🎉
@@ -209,7 +214,7 @@ export default function Game() {
             {/* Current on-chain record */}
             {isConnected && currentOnChainScore > 0 && (
               <div
-                className="text-gray-400 text-sm mb-4 text-center"
+                className="text-gray-400 text-sm text-center"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
                 Your Record: {currentOnChainScore}
@@ -218,7 +223,7 @@ export default function Game() {
 
             <button
               onClick={handleTryAgainClick}
-              className="bg-red-700 hover:bg-red-900 text-white font-bold py-3 px-6 rounded-lg text-xl md:text-2xl mx-auto block mb-6"
+              className="bg-red-700 hover:bg-red-900 text-white font-bold py-3 px-6 rounded-lg text-xl md:text-2xl"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
               Try Again
@@ -227,7 +232,7 @@ export default function Game() {
             {/* On-chain submission */}
             {!isConnected && (
               <div
-                className="text-gray-400 text-xs mb-4 text-center"
+                className="text-gray-400 text-xs text-center"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
                 Connect wallet to submit score on-chain
@@ -235,12 +240,12 @@ export default function Game() {
             )}
 
             {isConnected && finalScore > 0 && (
-              <div className="mb-6">
+              <div className="w-full flex flex-col items-center space-y-3">
                 {!scoreSubmitted ? (
                   <>
                     {isNewHighScore && (
                       <div
-                        className="text-white text-sm mb-3 text-center"
+                        className="text-white text-sm text-center"
                         style={{ fontFamily: "'Press Start 2P', cursive" }}
                       >
                         Save your new record to the blockchain!
@@ -253,7 +258,7 @@ export default function Game() {
                         isSubmitting || !isNewHighScore
                           ? "bg-gray-600"
                           : "bg-green-600 hover:bg-green-700"
-                      } text-white font-bold py-3 px-6 rounded-lg text-sm md:text-base w-full max-w-md mx-auto block`}
+                      } text-white font-bold py-3 px-6 rounded-lg text-sm md:text-base w-full max-w-md`}
                       style={{ fontFamily: "'Press Start 2P', cursive" }}
                     >
                       {isSubmitting
@@ -272,7 +277,7 @@ export default function Game() {
                   </div>
                 )}
                 {submissionError && (
-                  <div className="text-red-400 text-xs mt-2 text-center">
+                  <div className="text-red-400 text-xs text-center">
                     {submissionError}
                   </div>
                 )}
@@ -280,7 +285,7 @@ export default function Game() {
             )}
 
             {/* Leaderboard */}
-            <div className="mt-6">
+            <div className="w-full flex justify-center">
               <Leaderboard />
             </div>
           </div>
