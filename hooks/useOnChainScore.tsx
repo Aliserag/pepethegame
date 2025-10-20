@@ -5,8 +5,8 @@ import leaderboardAbi from "../lib/FlowPepeLeaderboard.abi.json";
 
 export default function useOnChainScore() {
   const { address, isConnected } = useAccount();
-  const publicClient = usePublicClient();
-  const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient({ chainId: baseSepolia.id });
+  const { data: walletClient } = useWalletClient({ chainId: baseSepolia.id });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
@@ -42,8 +42,29 @@ export default function useOnChainScore() {
    */
   const submitScore = useCallback(
     async (score: number): Promise<boolean> => {
-      if (!isConnected || !address || !walletClient || !contractAddress) {
-        setSubmissionError("Please connect your wallet first");
+      console.log("=== Submit Score Debug ===");
+      console.log("isConnected:", isConnected);
+      console.log("address:", address);
+      console.log("walletClient:", !!walletClient);
+      console.log("contractAddress:", contractAddress);
+
+      if (!isConnected) {
+        setSubmissionError("Wallet not connected");
+        return false;
+      }
+
+      if (!address) {
+        setSubmissionError("No wallet address found");
+        return false;
+      }
+
+      if (!walletClient) {
+        setSubmissionError("Wallet client not initialized. Please try reconnecting your wallet.");
+        return false;
+      }
+
+      if (!contractAddress) {
+        setSubmissionError("Contract address not configured");
         return false;
       }
 
