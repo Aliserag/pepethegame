@@ -71,7 +71,7 @@ function createInjectedConnector() {
     onAccountsChanged(accounts) {
       // Event handlers - wagmi will handle these internally
       if (accounts.length === 0) {
-        config.emitter.emit('disconnect', {})
+        config.emitter.emit('disconnect')
       } else {
         config.emitter.emit('change', { accounts: accounts as `0x${string}`[] })
       }
@@ -80,7 +80,7 @@ function createInjectedConnector() {
       config.emitter.emit('change', { chainId: parseInt(chain as string, 16) })
     },
     onDisconnect() {
-      config.emitter.emit('disconnect', {})
+      config.emitter.emit('disconnect')
     },
     async setup() {
       if (typeof window === 'undefined') return
