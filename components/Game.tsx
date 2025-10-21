@@ -81,6 +81,7 @@ export default function Game() {
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
+
   useEffect(() => {
     if (window.width > 0 && window.height > 0 && selectedMode) {
       startGame(window, selectedMode);
@@ -110,18 +111,12 @@ export default function Game() {
     setScoreSubmitted(false);
     setIsNewHighScore(false);
     setCurrentOnChainScore(0);
+    setDegenScoreSubmitted(false);
     clearError();
     clearDegenError();
 
-    // For DEGEN mode, go back to mode selection (can only play once per day)
-    if (selectedMode === "degen") {
-      setShowIntro(false);
-      setShowModeSelection(true);
-      setSelectedMode(null);
-    } else {
-      // For Fun mode, restart immediately
-      handleWindowClick();
-    }
+    // Restart immediately for both modes (no once-per-day restriction)
+    handleWindowClick();
   };
 
   const [currentOnChainScore, setCurrentOnChainScore] = useState(0);
@@ -151,10 +146,8 @@ export default function Game() {
   const handleConnectWallet = () => {
     // Connect to Farcaster wallet if available, otherwise show connector selection
     if (farcasterConnector) {
-      console.log("Connecting to Farcaster wallet...");
       connect({ connector: farcasterConnector });
     } else if (connectors.length > 0) {
-      console.log("Connecting to first available wallet...");
       connect({ connector: connectors[0] });
     }
   };
@@ -163,9 +156,16 @@ export default function Game() {
     setIsMuted((prev) => !prev);
   };
 
-  const handleModeSelection = async (mode: GameMode) => {
-    console.log("Mode selected:", mode);
+  const handleSubmitDegenScore = async () => {
+    if (finalScore > 0 && !degenScoreSubmitted && selectedMode === "degen") {
+      const success = await submitDegenScore(finalScore);
+      if (success) {
+        setDegenScoreSubmitted(true);
+      }
+    }
+  };
 
+  const handleModeSelection = async (mode: GameMode) => {
     // Clear any previous errors
     clearError();
     clearDegenError();
@@ -175,25 +175,10 @@ export default function Game() {
 
     if (mode === "fun") {
       // For Fun Mode, go directly to intro screen
-      console.log("Setting showIntro to true for Fun Mode");
       setShowIntro(true);
     } else {
-      console.log("DEGEN Mode - hasPlayed:", hasPlayed, "hasEntered:", hasEntered);
-      // For DEGEN Mode, check if already entered today
-      if (hasPlayed) {
-        // Already played today - show message and go back to mode selection
-        alert("You've already played DEGEN Mode today! Come back tomorrow or play Fun Mode.");
-        setShowModeSelection(true);
-        setSelectedMode(null);
-      } else if (hasEntered) {
-        // Already entered (paid) but haven't played yet - go to intro
-        console.log("Already entered, showing intro");
-        setShowIntro(true);
-      } else {
-        // Need to pay entry fee - show intro with payment option
-        console.log("Not entered yet, showing intro for payment");
-        setShowIntro(true);
-      }
+      // For DEGEN Mode, show intro screen (no once-per-day restriction)
+      setShowIntro(true);
     }
   };
 
@@ -212,30 +197,23 @@ export default function Game() {
     }
   };
 
+  const [degenScoreSubmitted, setDegenScoreSubmitted] = useState(false);
+  const [showAlreadyPlayedModal, setShowAlreadyPlayedModal] = useState(false);
+
   useEffect(() => {
     if (isGameOver) {
       setShowGameOver(true);
       // Save the score when game is over (use lastGameScore which is the current game's score)
       if (lastGameScore > 0) {
-        // Always save to localStorage for Fun mode
+        // Always save to localStorage
         saveScore(lastGameScore);
         setFinalScore(lastGameScore);
         setScoreSubmitted(false);
-
-        // For DEGEN mode, also submit to smart contract
-        if (selectedMode === "degen" && hasEntered) {
-          (async () => {
-            try {
-              await submitDegenScore(lastGameScore);
-            } catch (error) {
-              console.error("Error submitting DEGEN score:", error);
-            }
-          })();
-        }
+        setDegenScoreSubmitted(false); // Reset DEGEN submission state
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isGameOver, lastGameScore, selectedMode, hasEntered]);
+  }, [isGameOver, lastGameScore]);
 
   return (
     <div className="relative w-full h-full">
@@ -244,6 +222,45 @@ export default function Game() {
       {/* Mode Selection Screen */}
       {showModeSelection && (
         <ModeSelection onSelectMode={handleModeSelection} />
+      )}
+
+      {/* Already Played Today Modal */}
+      {showAlreadyPlayedModal && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-95 z-[100]">
+          <div className="bg-gradient-to-br from-orange-900 to-red-900 p-8 rounded-xl border-4 border-orange-500 max-w-md mx-4 shadow-2xl">
+            <div className="text-center">
+              <div className="text-6xl mb-4">⏰</div>
+              <h2
+                className="text-white text-2xl md:text-3xl font-bold mb-4"
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
+              >
+                Already Played!
+              </h2>
+              <p className="text-orange-200 text-sm mb-6 leading-relaxed">
+                You've already played DEGEN Mode today! Come back tomorrow for another chance to win from the prize pool.
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    setShowAlreadyPlayedModal(false);
+                    handleModeSelection("fun");
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-sm"
+                  style={{ fontFamily: "'Press Start 2P', cursive" }}
+                >
+                  Play Fun Mode Instead
+                </button>
+                <button
+                  onClick={() => setShowAlreadyPlayedModal(false)}
+                  className="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg text-sm"
+                  style={{ fontFamily: "'Press Start 2P', cursive" }}
+                >
+                  Back to Menu
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {showIntro && (
@@ -387,26 +404,47 @@ export default function Game() {
                   <div className="text-green-300 text-xs mb-1">Speed Multiplier</div>
                   <div className="text-white text-xl font-bold">{calculateMultiplier(finalScore).toFixed(2)}x</div>
                 </div>
-                <div className="bg-yellow-900 bg-opacity-50 border-2 border-yellow-500 p-3 rounded-lg">
-                  <div className="text-yellow-300 text-xs mb-1">Potential Earnings</div>
-                  <div className="text-white text-xl font-bold">
-                    {isSubmittingDegen ? "Calculating..." : potentialReward === "0" ? "Calculating..." : `${potentialReward} ETH`}
-                  </div>
-                  <div className="text-gray-400 text-xs mt-1">
-                    {potentialReward !== "0" ? "Check back tomorrow to claim rewards!" : "Rewards calculated after score submission"}
-                  </div>
-                </div>
-                <div className="text-orange-400 text-sm text-center p-3 bg-orange-900 bg-opacity-30 rounded-lg">
-                  ⚠️ You've played today! Come back tomorrow for another chance.
-                </div>
-                {isSubmittingDegen && (
-                  <div className="text-blue-400 text-xs text-center">
-                    Submitting score to blockchain...
+
+                {degenScoreSubmitted && potentialReward !== "0" && (
+                  <div className="bg-yellow-900 bg-opacity-50 border-2 border-yellow-500 p-3 rounded-lg">
+                    <div className="text-yellow-300 text-xs mb-1">Your Earnings</div>
+                    <div className="text-white text-xl font-bold">{potentialReward} ETH</div>
+                    <div className="text-gray-400 text-xs mt-1">
+                      Check back tomorrow to claim rewards!
+                    </div>
                   </div>
                 )}
+
+                {!degenScoreSubmitted && (
+                  <button
+                    onClick={handleSubmitDegenScore}
+                    disabled={isSubmittingDegen}
+                    className={`${
+                      isSubmittingDegen ? "bg-gray-600" : "bg-green-600 hover:bg-green-700"
+                    } text-white font-bold py-3 px-6 rounded-lg text-sm md:text-base w-full`}
+                    style={{ fontFamily: "'Press Start 2P', cursive" }}
+                  >
+                    {isSubmittingDegen ? "Submitting Score..." : "Submit Score to Pool 🏆"}
+                  </button>
+                )}
+
+                {degenScoreSubmitted && (
+                  <div className="bg-green-900 bg-opacity-50 border-2 border-green-500 p-3 rounded-lg">
+                    <div className="text-green-400 text-sm text-center">
+                      ✅ Score Submitted Successfully!
+                    </div>
+                  </div>
+                )}
+
+                {isSubmittingDegen && (
+                  <div className="text-blue-400 text-xs text-center animate-pulse">
+                    📡 Transaction in progress...
+                  </div>
+                )}
+
                 {degenError && (
-                  <div className="text-red-400 text-xs text-center">
-                    {degenError}
+                  <div className="text-red-400 text-xs text-center bg-red-900 bg-opacity-30 p-2 rounded">
+                    ❌ {degenError}
                   </div>
                 )}
               </div>
@@ -437,7 +475,7 @@ export default function Game() {
               className="bg-red-700 hover:bg-red-900 text-white font-bold py-3 px-6 rounded-lg text-xl md:text-2xl"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
-              {selectedMode === "degen" ? "Back to Menu" : "Try Again"}
+              Try Again
             </button>
 
             {/* On-chain submission (Fun Mode only) */}

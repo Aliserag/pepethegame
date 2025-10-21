@@ -167,8 +167,8 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
       draft.gameMode = mode;
 
       // Set multiplier step based on mode
-      // DEGEN Mode: 2x faster progression (every 2.5 points instead of 5)
-      draft.multiplier.step = mode === "degen" ? 2.5 : 5;
+      // DEGEN Mode: 2.5x faster progression (every 2 points instead of 5)
+      draft.multiplier.step = mode === "degen" ? 2 : 5;
 
       setBirdCenter(draft);
       createPipes(draft);
