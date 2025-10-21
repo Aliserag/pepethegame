@@ -39,12 +39,12 @@ const ModeSelection: React.FC<ModeSelectionProps> = ({ onSelectMode }) => {
               <li>✓ Compete for top score</li>
               <li>✓ Normal speed progression</li>
             </ul>
-            <button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-sm"
+            <div
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-sm text-center"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
               Play Free
-            </button>
+            </div>
           </div>
 
           {/* DEGEN Mode Card */}
@@ -72,12 +72,12 @@ const ModeSelection: React.FC<ModeSelectionProps> = ({ onSelectMode }) => {
               <li>✓ 2x faster speed</li>
               <li>✓ Higher scores = more $</li>
             </ul>
-            <button
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-sm animate-pulse"
+            <div
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-sm text-center animate-pulse"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
               Play for $$$
-            </button>
+            </div>
           </div>
         </div>
 

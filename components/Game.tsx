@@ -164,6 +164,8 @@ export default function Game() {
   };
 
   const handleModeSelection = async (mode: GameMode) => {
+    console.log("Mode selected:", mode);
+
     // Clear any previous errors
     clearError();
     clearDegenError();
@@ -173,8 +175,10 @@ export default function Game() {
 
     if (mode === "fun") {
       // For Fun Mode, go directly to intro screen
+      console.log("Setting showIntro to true for Fun Mode");
       setShowIntro(true);
     } else {
+      console.log("DEGEN Mode - hasPlayed:", hasPlayed, "hasEntered:", hasEntered);
       // For DEGEN Mode, check if already entered today
       if (hasPlayed) {
         // Already played today - show message and go back to mode selection
@@ -183,9 +187,11 @@ export default function Game() {
         setSelectedMode(null);
       } else if (hasEntered) {
         // Already entered (paid) but haven't played yet - go to intro
+        console.log("Already entered, showing intro");
         setShowIntro(true);
       } else {
         // Need to pay entry fee - show intro with payment option
+        console.log("Not entered yet, showing intro for payment");
         setShowIntro(true);
       }
     }
