@@ -85,7 +85,8 @@ export default function Game() {
     if (window.width > 0 && window.height > 0 && selectedMode) {
       startGame(window, selectedMode);
     }
-  }, [window, ref, selectedMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [window.width, window.height, selectedMode]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -110,6 +111,7 @@ export default function Game() {
     setIsNewHighScore(false);
     setCurrentOnChainScore(0);
     clearError();
+    clearDegenError();
 
     // For DEGEN mode, go back to mode selection (can only play once per day)
     if (selectedMode === "degen") {
@@ -162,6 +164,10 @@ export default function Game() {
   };
 
   const handleModeSelection = async (mode: GameMode) => {
+    // Clear any previous errors
+    clearError();
+    clearDegenError();
+
     setSelectedMode(mode);
     setShowModeSelection(false);
 
@@ -212,10 +218,17 @@ export default function Game() {
 
         // For DEGEN mode, also submit to smart contract
         if (selectedMode === "degen" && hasEntered) {
-          submitDegenScore(lastGameScore);
+          (async () => {
+            try {
+              await submitDegenScore(lastGameScore);
+            } catch (error) {
+              console.error("Error submitting DEGEN score:", error);
+            }
+          })();
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isGameOver, lastGameScore, selectedMode, hasEntered]);
 
   return (
@@ -256,7 +269,9 @@ export default function Game() {
               <div className="space-y-3 mb-4">
                 <div className="bg-green-900 bg-opacity-50 border-2 border-green-500 p-3 rounded-lg">
                   <div className="text-green-300 text-xs mb-1">Prize Pool</div>
-                  <div className="text-white text-xl font-bold">{currentPool} ETH</div>
+                  <div className="text-white text-xl font-bold">
+                    {currentPool === "0" && !isWalletConnected ? "Connect wallet to view" : `${currentPool} ETH`}
+                  </div>
                 </div>
                 <div className="bg-yellow-900 bg-opacity-50 border-2 border-yellow-500 p-3 rounded-lg">
                   <div className="text-yellow-300 text-xs mb-1">Entry Fee</div>
@@ -329,6 +344,8 @@ export default function Game() {
 
             <button
               onClick={() => {
+                clearError();
+                clearDegenError();
                 setShowIntro(false);
                 setShowModeSelection(true);
                 setSelectedMode(null);
@@ -366,9 +383,11 @@ export default function Game() {
                 </div>
                 <div className="bg-yellow-900 bg-opacity-50 border-2 border-yellow-500 p-3 rounded-lg">
                   <div className="text-yellow-300 text-xs mb-1">Potential Earnings</div>
-                  <div className="text-white text-xl font-bold">{potentialReward} ETH</div>
+                  <div className="text-white text-xl font-bold">
+                    {isSubmittingDegen ? "Calculating..." : potentialReward === "0" ? "Calculating..." : `${potentialReward} ETH`}
+                  </div>
                   <div className="text-gray-400 text-xs mt-1">
-                    Check back tomorrow to claim rewards!
+                    {potentialReward !== "0" ? "Check back tomorrow to claim rewards!" : "Rewards calculated after score submission"}
                   </div>
                 </div>
                 <div className="text-orange-400 text-sm text-center p-3 bg-orange-900 bg-opacity-30 rounded-lg">
