@@ -66,7 +66,7 @@ const ModeSelection: React.FC<ModeSelectionProps> = ({ onSelectMode }) => {
               Play to earn! $5 entry, win from the prize pool!
             </p>
             <ul className="text-left text-green-100 text-xs space-y-2 mb-6">
-              <li>✓ $5 entry fee per day</li>
+              <li>✓ $5 entry fee per play</li>
               <li>✓ Win from prize pool</li>
               <li>✓ Exponential multipliers</li>
               <li>✓ 2x faster speed</li>
@@ -83,7 +83,7 @@ const ModeSelection: React.FC<ModeSelectionProps> = ({ onSelectMode }) => {
 
         <div className="mt-8 text-gray-400 text-xs max-w-md mx-auto">
           <p className="mb-2">
-            💡 <strong>DEGEN Mode:</strong> Fair play-to-earn with daily resets
+            💡 <strong>DEGEN Mode:</strong> Fair play-to-earn with unlimited plays
           </p>
           <p>
             The farther you go and the faster your speed, the more you can earn

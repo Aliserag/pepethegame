@@ -237,7 +237,7 @@ export default function Game() {
                 Already Played!
               </h2>
               <p className="text-orange-200 text-sm mb-6 leading-relaxed">
-                You've already played DEGEN Mode today! Come back tomorrow for another chance to win from the prize pool.
+                This modal should not appear anymore. If you see this, please report it as a bug.
               </p>
               <div className="space-y-3">
                 <button
@@ -410,7 +410,7 @@ export default function Game() {
                     <div className="text-yellow-300 text-xs mb-1">Your Earnings</div>
                     <div className="text-white text-xl font-bold">{potentialReward} ETH</div>
                     <div className="text-gray-400 text-xs mt-1">
-                      Check back tomorrow to claim rewards!
+                      Rewards can be claimed after the period ends!
                     </div>
                   </div>
                 )}
