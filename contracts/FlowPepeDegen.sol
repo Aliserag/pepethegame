@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title FlowPepeDegen
@@ -53,7 +53,7 @@ contract FlowPepeDegen is Ownable, ReentrancyGuard {
     event NewDay(uint256 day, uint256 rolloverAmount);
     event EntryFeeUpdated(uint256 newFee);
 
-    constructor() {
+    constructor() Ownable(msg.sender) {
         gameStartTime = block.timestamp;
         currentDay = 0;
         dayStats[0].dayStart = block.timestamp;
@@ -75,7 +75,7 @@ contract FlowPepeDegen is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Submit entry and start game
+     * @notice Submit entry and start game (unlimited plays)
      */
     function enterGame() external payable nonReentrant {
         require(msg.value == entryFee, "Incorrect entry fee");
@@ -87,9 +87,8 @@ contract FlowPepeDegen is Ownable, ReentrancyGuard {
             _rolloverDay();
         }
 
-        require(!hasPlayed[day][msg.sender], "Already played today");
-
-        // Mark as played
+        // No daily restriction - players can play unlimited times
+        // Mark as played for this entry
         hasPlayed[day][msg.sender] = true;
 
         // Calculate fees
@@ -111,8 +110,13 @@ contract FlowPepeDegen is Ownable, ReentrancyGuard {
     function submitScore(uint256 score) external {
         uint256 day = getCurrentDay();
         require(hasPlayed[day][msg.sender], "Must enter game first");
-        require(playerScores[day][msg.sender].score == 0, "Score already submitted");
+        // Allow multiple scores per day - keep the highest
         require(score > 0, "Score must be greater than 0");
+
+        // Only update if this score is higher than previous score
+        if (playerScores[day][msg.sender].score > 0 && score <= playerScores[day][msg.sender].score) {
+            return; // Don't update if score is not higher
+        }
 
         // Calculate speed multiplier (increases 0.1x every 2.5 points for DEGEN mode)
         // Formula: 100 + (score * 4) basis points (4 = 0.1x per 2.5 points)
