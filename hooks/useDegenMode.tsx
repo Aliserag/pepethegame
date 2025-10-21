@@ -1,0 +1,377 @@
+import { useState, useCallback, useEffect } from "react";
+import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import { baseSepolia } from "wagmi/chains";
+import { parseEther, formatEther } from "viem";
+
+// ABI will be added after contract deployment
+const degenAbi = [
+  {
+    "inputs": [],
+    "name": "enterGame",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "uint256", "name": "score", "type": "uint256"}],
+    "name": "submitScore",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "player", "type": "address"}],
+    "name": "hasPlayedToday",
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getCurrentPool",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getCurrentDay",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "player", "type": "address"},
+      {"internalType": "uint256", "name": "day", "type": "uint256"}
+    ],
+    "name": "calculateReward",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "uint256", "name": "day", "type": "uint256"}],
+    "name": "claimReward",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "entryFee",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "uint256", "name": "day", "type": "uint256"}],
+    "name": "getDayStats",
+    "outputs": [
+      {"internalType": "uint256", "name": "highScore", "type": "uint256"},
+      {"internalType": "address", "name": "highScorer", "type": "address"},
+      {"internalType": "uint256", "name": "totalPool", "type": "uint256"},
+      {"internalType": "uint256", "name": "totalPlayers", "type": "uint256"},
+      {"internalType": "uint256", "name": "dayStart", "type": "uint256"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getMyScore",
+    "outputs": [
+      {"internalType": "uint256", "name": "score", "type": "uint256"},
+      {"internalType": "uint256", "name": "multiplier", "type": "uint256"},
+      {"internalType": "bool", "name": "claimed", "type": "bool"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] as const;
+
+export default function useDegenMode() {
+  const { address, isConnected } = useAccount();
+  const publicClient = usePublicClient({ chainId: baseSepolia.id });
+  const { data: walletClient } = useWalletClient();
+
+  const [isEntering, setIsEntering] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [hasPlayed, setHasPlayed] = useState(false);
+  const [hasEntered, setHasEntered] = useState(false);
+  const [currentPool, setCurrentPool] = useState("0");
+  const [entryFee, setEntryFee] = useState("0.002");
+  const [potentialReward, setPotentialReward] = useState("0");
+  const [currentDay, setCurrentDay] = useState(0);
+
+  // Contract address - will be set after deployment
+  const contractAddress = (process.env.NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000") as `0x${string}`;
+
+  /**
+   * Load initial data
+   */
+  const loadData = useCallback(async () => {
+    if (!publicClient || !address || contractAddress === "0x0000000000000000000000000000000000000000") {
+      return;
+    }
+
+    try {
+      // Get entry fee
+      const fee = await publicClient.readContract({
+        address: contractAddress,
+        abi: degenAbi,
+        functionName: "entryFee",
+      }) as bigint;
+      setEntryFee(formatEther(fee));
+
+      // Get current pool
+      const pool = await publicClient.readContract({
+        address: contractAddress,
+        abi: degenAbi,
+        functionName: "getCurrentPool",
+      }) as bigint;
+      setCurrentPool(formatEther(pool));
+
+      // Get current day
+      const day = await publicClient.readContract({
+        address: contractAddress,
+        abi: degenAbi,
+        functionName: "getCurrentDay",
+      }) as bigint;
+      setCurrentDay(Number(day));
+
+      // Check if played today
+      const played = await publicClient.readContract({
+        address: contractAddress,
+        abi: degenAbi,
+        functionName: "hasPlayedToday",
+        args: [address],
+      }) as boolean;
+      setHasPlayed(played);
+
+    } catch (err) {
+      console.error("Error loading DEGEN data:", err);
+    }
+  }, [publicClient, address, contractAddress]);
+
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 10000); // Refresh every 10s
+    return () => clearInterval(interval);
+  }, [loadData]);
+
+  /**
+   * Enter game (pay entry fee)
+   */
+  const enterGame = useCallback(async (): Promise<boolean> => {
+    if (!walletClient || !address || !publicClient) {
+      setError("Wallet not connected");
+      return false;
+    }
+
+    setIsEntering(true);
+    setError(null);
+
+    try {
+      const fee = parseEther(entryFee);
+
+      const hash = await walletClient.writeContract({
+        address: contractAddress,
+        abi: degenAbi,
+        functionName: "enterGame",
+        value: fee,
+        chain: baseSepolia,
+      });
+
+      console.log("Entry transaction sent:", hash);
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+      if (receipt.status === "success") {
+        setHasEntered(true);
+        setHasPlayed(true);
+        await loadData();
+        setIsEntering(false);
+        return true;
+      } else {
+        setError("Entry transaction failed");
+        setIsEntering(false);
+        return false;
+      }
+    } catch (err: any) {
+      console.error("Error entering game:", err);
+      if (err.message?.includes("Already played today")) {
+        setError("You've already played today. Come back tomorrow!");
+      } else if (err.message?.includes("rejected")) {
+        setError("Transaction cancelled");
+      } else {
+        setError("Failed to enter game");
+      }
+      setIsEntering(false);
+      return false;
+    }
+  }, [walletClient, address, publicClient, contractAddress, entryFee, loadData]);
+
+  /**
+   * Submit score after game ends
+   */
+  const submitScore = useCallback(async (score: number): Promise<boolean> => {
+    if (!walletClient || !address || !publicClient) {
+      setError("Wallet not connected");
+      return false;
+    }
+
+    if (!hasEntered) {
+      setError("Must enter game first");
+      return false;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const hash = await walletClient.writeContract({
+        address: contractAddress,
+        abi: degenAbi,
+        functionName: "submitScore",
+        args: [BigInt(score)],
+        chain: baseSepolia,
+      });
+
+      console.log("Score submission transaction sent:", hash);
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+      if (receipt.status === "success") {
+        // Calculate potential reward
+        const reward = await publicClient.readContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "calculateReward",
+          args: [address, BigInt(currentDay)],
+        }) as bigint;
+        setPotentialReward(formatEther(reward));
+
+        setIsSubmitting(false);
+        return true;
+      } else {
+        setError("Score submission failed");
+        setIsSubmitting(false);
+        return false;
+      }
+    } catch (err: any) {
+      console.error("Error submitting score:", err);
+      setError("Failed to submit score");
+      setIsSubmitting(false);
+      return false;
+    }
+  }, [walletClient, address, publicClient, contractAddress, hasEntered, currentDay]);
+
+  /**
+   * Claim rewards from a previous day
+   */
+  const claimReward = useCallback(async (day: number): Promise<boolean> => {
+    if (!walletClient || !address || !publicClient) {
+      setError("Wallet not connected");
+      return false;
+    }
+
+    setIsClaiming(true);
+    setError(null);
+
+    try {
+      const hash = await walletClient.writeContract({
+        address: contractAddress,
+        abi: degenAbi,
+        functionName: "claimReward",
+        args: [BigInt(day)],
+        chain: baseSepolia,
+      });
+
+      console.log("Claim transaction sent:", hash);
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+      if (receipt.status === "success") {
+        await loadData();
+        setIsClaiming(false);
+        return true;
+      } else {
+        setError("Claim transaction failed");
+        setIsClaiming(false);
+        return false;
+      }
+    } catch (err: any) {
+      console.error("Error claiming reward:", err);
+      if (err.message?.includes("No reward")) {
+        setError("No reward to claim");
+      } else {
+        setError("Failed to claim reward");
+      }
+      setIsClaiming(false);
+      return false;
+    }
+  }, [walletClient, address, publicClient, contractAddress, loadData]);
+
+  /**
+   * Calculate speed multiplier for DEGEN mode
+   * Increases 0.1x every 2.5 points (2x faster than Fun Mode)
+   */
+  const calculateMultiplier = useCallback((score: number): number => {
+    // Formula: 1.0 + (score * 0.04)
+    // score * 0.04 = 0.1x every 2.5 points
+    return 1.0 + (score * 0.04);
+  }, []);
+
+  /**
+   * Calculate potential earnings
+   */
+  const calculatePotentialEarnings = useCallback((score: number, highScore: number, pool: string): string => {
+    if (score === 0 || highScore === 0) return "0";
+
+    const poolAmount = parseFloat(pool);
+    const multiplier = calculateMultiplier(score);
+
+    // Base reward: (Your Score / High Score) × Pool
+    const baseReward = (score / highScore) * poolAmount;
+
+    // Apply multiplier
+    const multipliedReward = baseReward * multiplier;
+
+    // Cap at 50% of pool
+    const maxPayout = poolAmount * 0.5;
+    const finalReward = Math.min(multipliedReward, maxPayout);
+
+    // Check 80% threshold
+    const threshold = highScore * 0.8;
+    if (score < threshold) return "0";
+
+    return finalReward.toFixed(4);
+  }, [calculateMultiplier]);
+
+  return {
+    // State
+    hasPlayed,
+    hasEntered,
+    currentPool,
+    entryFee,
+    potentialReward,
+    currentDay,
+    isEntering,
+    isSubmitting,
+    isClaiming,
+    error,
+
+    // Functions
+    enterGame,
+    submitScore,
+    claimReward,
+    calculateMultiplier,
+    calculatePotentialEarnings,
+    loadData,
+    clearError: () => setError(null),
+  };
+}

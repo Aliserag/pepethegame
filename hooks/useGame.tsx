@@ -71,6 +71,7 @@ const defaultState = {
   clickCount: 0, // Initialize clickCount
   bestClickCount: 0, // Initialize bestClickCount
   lastGameScore: 0, // Track the score of the most recent game
+  gameMode: "fun" as "fun" | "degen", // Track current game mode
 };
 
 type Size = {
@@ -100,7 +101,7 @@ interface GameContext extends GameState {
   fall: () => void;
   handleWindowClick: () => void;
   movePipes: () => void;
-  startGame: (window: Size) => void;
+  startGame: (window: Size, mode?: "fun" | "degen") => void;
   resetGame: () => void;
 }
 
@@ -149,6 +150,7 @@ interface GameState {
   clickCount: number; // State to track current clicks
   bestClickCount: number; // State to track the best clicks
   lastGameScore: number; // Score of the most recent game
+  gameMode: "fun" | "degen"; // Current game mode
 }
 
 type StateDraft = WritableDraft<GameState>;
@@ -158,10 +160,16 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, setState] = useImmer<GameState>(defaultState);
 
   // Main Functions
-  const startGame = (window: Size) => {
+  const startGame = (window: Size, mode: "fun" | "degen" = "fun") => {
     setState((draft) => {
       draft.window = window;
       draft.isReady = true;
+      draft.gameMode = mode;
+
+      // Set multiplier step based on mode
+      // DEGEN Mode: 2x faster progression (every 2.5 points instead of 5)
+      draft.multiplier.step = mode === "degen" ? 2.5 : 5;
+
       setBirdCenter(draft);
       createPipes(draft);
       return draft;
