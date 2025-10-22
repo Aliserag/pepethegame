@@ -60,6 +60,7 @@ export default function Game() {
     calculateMultiplier,
     calculatePotentialEarnings,
     loadData: loadDegenData,
+    resetEntry,
     clearError: clearDegenError,
     hallOfFame,
     claimableRewards,
@@ -126,8 +127,14 @@ export default function Game() {
     clearError();
     clearDegenError();
 
-    // Restart immediately for both modes (no once-per-day restriction)
-    handleWindowClick();
+    // In DEGEN mode, require entry fee payment again
+    if (selectedMode === "degen") {
+      resetEntry(); // Reset DEGEN entry state
+      setShowIntro(true); // Show intro screen to require entry payment
+    } else {
+      // Fun mode: restart immediately
+      handleWindowClick();
+    }
   };
 
   const [currentOnChainScore, setCurrentOnChainScore] = useState(0);

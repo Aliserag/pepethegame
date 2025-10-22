@@ -629,6 +629,15 @@ export default function useDegenMode() {
     }
   }, [walletClient, address, publicClient, contractAddress, claimableRewards, loadData]);
 
+  /**
+   * Reset entry state (for "Try Again" functionality)
+   */
+  const resetEntry = useCallback(() => {
+    setHasEntered(false);
+    setPotentialReward("0");
+    setError(null);
+  }, []);
+
   return {
     // State
     hasPlayed,
@@ -657,6 +666,7 @@ export default function useDegenMode() {
     calculateMultiplier,
     calculatePotentialEarnings,
     loadData,
+    resetEntry,
     clearError: () => setError(null),
   };
 }
