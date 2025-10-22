@@ -166,6 +166,9 @@ export default function useDegenMode() {
 
     setLoadingStats(true);
 
+    // Helper function to add delay between calls to avoid rate limiting
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
     try {
       // Get entry fee
       const fee = await publicClient.readContract({
@@ -183,6 +186,8 @@ export default function useDegenMode() {
       }) as bigint;
       setCurrentPool(formatEther(pool));
 
+      await delay(150);
+
       // Get current day
       const day = await publicClient.readContract({
         address: contractAddress,
@@ -190,6 +195,8 @@ export default function useDegenMode() {
         functionName: "getCurrentDay",
       }) as bigint;
       setCurrentDay(Number(day));
+
+      await delay(150);
 
       // Check if played today
       const played = await publicClient.readContract({
@@ -199,6 +206,8 @@ export default function useDegenMode() {
         args: [address],
       }) as boolean;
       setHasPlayed(played);
+
+      await delay(150);
 
       // Get Hall of Fame (top 10) - handle empty case
       try {
