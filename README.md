@@ -1,59 +1,104 @@
 # FlowPepe 🐸
 
-**WAGMI! Help Pepe make it through red candlestick obstacles and earn points!**
+**WAGMI! Help Pepe navigate through red candlestick obstacles in this skill-based arcade game with real ETH rewards!**
 
-A Flappy Bird-style game built as a Farcaster Mini App with on-chain leaderboard on Base network.
+A Flappy Bird-style game built as a Farcaster Mini App with dual game modes: Free-to-play **Fun Mode** and prize-pool-based **DEGEN Mode** on Base network.
 
-🎮 **Play Now:** [https://www.flowpepe.com](https://www.flowpepe.com)
+🎮 **Play Now:**
+- **Web:** [https://www.flowpepe.com](https://www.flowpepe.com)
+- **Farcaster Mini App:** [Play on Farcaster](https://farcaster.xyz/miniapps/qXKHh0xCCqID/flowpepe)
 
-## Features
+⚠️ **DEGEN Mode Requirement:** You must have Base Sepolia testnet ETH in your wallet before playing DEGEN Mode. Get free testnet ETH from the [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet).
 
-- 🕹️ **Classic Gameplay** - Flappy Bird mechanics with crypto candlestick obstacles
-- 🐸 **Retro Aesthetic** - Pixel-perfect graphics with Press Start 2P font
-- 🏆 **On-Chain Leaderboard** - Submit your high scores to the blockchain
-- 🔗 **Wallet Integration** - Connect via Farcaster Mini App connector
-- 📊 **Progressive Difficulty** - 10% speed increase every 5 points
-- 🎵 **Sound Effects** - Background music with mute toggle
-- 📱 **Fully Responsive** - Optimized for mobile and desktop
-- 🌐 **Farcaster Native** - Built with Farcaster Frame SDK
+## 🌟 Game Modes
 
-## Tech Stack
+### 🎮 Fun Mode (Free-to-Play)
+- **Unlimited plays** - No cost, play as much as you want
+- **On-chain leaderboard** - Submit high scores to Base blockchain
+- **Wallet optional** - Play without connecting (local scores only)
+- **Normal difficulty** - Speed increases 10% every 5 points
 
-- **Frontend:** Next.js 12, React 18, TypeScript, TailwindCSS
-- **Animation:** Framer Motion (physics-based)
-- **Blockchain:** Base (L2), wagmi, viem
-- **Farcaster:** Frame SDK, Mini App connector
-- **Smart Contract:** Solidity 0.8.20
-- **Deployment:** Vercel
+### 💰 DEGEN Mode (Play-to-Earn)
+- **0.002 ETH entry** (~$5 USD per play) ⚠️ **Requires Base Sepolia testnet ETH**
+- **Daily prize pools** with skill-based distribution
+- **Progressive multipliers** - 0.1x increase every 2.5 points (2x faster than Fun Mode)
+- **Real ETH rewards** - Top players split up to 75% of the prize pool
+- **20% rollover** - Unclaimed rewards carry over to build bigger pools
+- **Unlimited replays** - Keep entering until you get your best score!
 
-## Smart Contracts
+**Get Testnet ETH:** [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet)
+
+**Prize Pool Economics:**
+- 95% of entry fees → Prize pool
+- 5% → Creator fee (sustains development)
+- Up to 75% distributed to winners (50% max per player)
+- 20% rolls over daily (compounds growth)
+
+## ✨ Features
+
+- 🐸 **Classic Flappy Bird Mechanics** - Tap/click to fly, avoid obstacles
+- 🎨 **Retro Pixel Art** - Press Start 2P font, trading chart aesthetics
+- ⛓️ **Fully On-Chain** - Two smart contracts on Base (Sepolia testnet)
+- 🎯 **Skill-Based Rewards** - DEGEN Mode: Higher scores = exponentially higher earnings
+- 📊 **Live Leaderboards** - Real-time rankings with on-chain verification
+- 🏆 **Hall of Fame** - Lifetime earnings tracker for top players
+- 💸 **Instant Claims** - Withdraw winnings any time after period ends
+- 📱 **Farcaster Native** - Built with Frame SDK, optimized for mobile
+- 🔊 **Mutable Audio** - Background music with toggle control
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework:** Next.js 12.3.2, React 18, TypeScript 4.7
+- **Styling:** TailwindCSS 3, Custom CSS variables
+- **Animation:** Framer Motion 6.2.4 (physics-based movement)
+- **State:** use-immer 0.8.1 (immutable updates), React Context API
+
+### Blockchain
+- **Network:** Base Sepolia (testnet), Base mainnet ready
+- **Wallet:** wagmi 2.18, viem 2.38 (Ethereum interactions)
+- **Connectors:** Farcaster Mini App Connector 1.1, Injected (MetaMask)
+- **Smart Contracts:** Solidity 0.8.20, OpenZeppelin 5.4
+
+### Farcaster Integration
+- **SDK:** @farcaster/frame-sdk 0.1.12
+- **Connector:** @farcaster/miniapp-wagmi-connector 1.1.0
+- **Features:** Auto-wallet connection, user context, mini app manifest
+
+### Development
+- **Deployment:** Hardhat 3.0.7, hardhat-deploy 1.0.4
+- **Build:** Vercel (recommended), static export support
+- **Compiler:** TypeScript 5.9, Next.js compiler
+
+## 📜 Smart Contracts
 
 ### Base Sepolia Testnet
 
-- **Leaderboard Contract:** `0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c`
-- **BaseScan:** [View on Base Sepolia Explorer](https://sepolia.basescan.org/address/0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c)
-- **Network:** Base Sepolia (Chain ID: 84532)
-- **Deployer:** `0xCC18E51efc529ed41e48aE5DEa8fCeC60A2baefE`
-- **Deployment TX:** [0x808d0fa3fcb69533ee1792a8df445af8d2a019dd5aff4dfa9110d2b30ba4399e](https://sepolia.basescan.org/tx/0x808d0fa3fcb69533ee1792a8df445af8d2a019dd5aff4dfa9110d2b30ba4399e)
-- **Block:** 32446606
+**FlowPepeLeaderboard (Fun Mode)**
+- **Address:** `0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c`
+- **Purpose:** On-chain high score tracking
+- **Functions:** submitScore, getScore, getTopScores
+- **Explorer:** [View on BaseScan](https://sepolia.basescan.org/address/0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c)
+
+**FlowPepeDegen (DEGEN Mode)**
+- **Address:** `0x806e4d33f36886ca9439f2c407505de936498d0e`
+- **Purpose:** Daily prize pool, entry fees, reward distribution
+- **Key Functions:**
+  - `enterGame()` - Pay 0.002 ETH to play
+  - `submitScore(uint256 score)` - Record your result
+  - `calculateReward(address, uint256 day)` - View potential earnings
+  - `claimReward(uint256 day)` - Withdraw winnings
+  - `getDayLeaderboard(uint256 day, uint256 limit)` - View rankings
+  - `hasPlayedToday(address)` - Check play status
+- **Security:** ReentrancyGuard, Ownable, no arbitrary calls
+- **Explorer:** [View on BaseScan](https://sepolia.basescan.org/address/0x806e4d33f36886ca9439f2c407505de936498d0e)
 
 ### Base Mainnet
+*Ready to deploy - see deployment section below*
 
-*Coming soon - Deploy with `node scripts/deploy-simple.js base`*
+## 🚀 Getting Started
 
-## Contract Features
-
-The FlowPepe Leaderboard contract provides:
-
-✅ **submitScore(uint256 score)** - Submit your high score on-chain
-✅ **getScore(address player)** - Get a player's high score
-✅ **getTopScores(uint256 count)** - Get top N players and scores
-✅ **getPlayerCount()** - Get total number of unique players
-✅ Gas-optimized sorting algorithm
-✅ Automatic high score validation
-✅ Event emissions for indexing
-
-## Installation
+### Installation
 
 ```bash
 # Clone the repository
@@ -63,12 +108,12 @@ cd pepethegame
 # Install dependencies
 npm install --legacy-peer-deps
 
-# Create .env file
+# Copy environment template
 cp .env.example .env
 
-# Add your environment variables
-# DEPLOYER_PRIVATE_KEY=your_private_key_here
-# NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS=0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c
+# Edit .env with your values
+# Required: NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS, NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS
+# Optional: DEPLOYER_PRIVATE_KEY (only for contract deployment)
 
 # Run development server
 npm run dev
@@ -76,170 +121,302 @@ npm run dev
 
 Visit [http://localhost:3000](http://localhost:3000) to play locally.
 
-## Smart Contract Deployment
+### Environment Variables
 
-### Deploy to Base Sepolia Testnet
+**Required for Production:**
+```env
+# Fun Mode Contract
+NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS=0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c
 
-```bash
-# Ensure you have testnet ETH in your deployer wallet
-# Get free testnet ETH: https://www.coinbase.com/faucets/base-ethereum-goerli-faucet
+# DEGEN Mode Contract
+NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS=0x806e4d33f36886ca9439f2c407505de936498d0e
 
-node scripts/deploy-simple.js baseSepolia
+# Base Sepolia RPC (for better rate limits)
+NEXT_PUBLIC_BASE_SEPOLIA_RPC=https://base-sepolia.g.alchemy.com/v2/YOUR_KEY
 ```
 
-### Deploy to Base Mainnet
-
-```bash
-node scripts/deploy-simple.js base
+**Required for Deployment Only:**
+```env
+DEPLOYER_PRIVATE_KEY=your_private_key_here
 ```
 
-### Verify Contract on Basescan
-
-```bash
-# Get verification instructions
-node scripts/verify.js baseSepolia
-
-# Follow the instructions to manually verify on Basescan
-```
-
-Or verify directly on Basescan:
-1. Visit the contract on [BaseScan](https://sepolia.basescan.org/address/0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c)
-2. Click "Contract" → "Verify and Publish"
-3. Compiler: v0.8.20+commit.a1b79de6
-4. Optimization: Yes (200 runs)
-5. Paste code from `contracts/FlowPepeLeaderboard.sol`
-
-## Game Mechanics
+## 🎮 Game Mechanics
 
 ### Gameplay
-- Click/tap to make Pepe jump
-- Avoid red candlestick obstacles
-- Score increases with each obstacle passed
-- Game speed increases 10% every 5 points
+1. **Choose Mode:** Fun (free) or DEGEN (0.002 ETH)
+2. **Start Game:** Click/tap START button
+3. **Control Pepe:** Single tap/click makes Pepe jump
+4. **Avoid Obstacles:** Navigate through gaps in red candlestick pipes
+5. **Score Points:** +1 for each obstacle cleared
+6. **Survive:** Game over on collision with pipes or ground
 
-### Scoring System
-- **Local Storage:** Tracks total score and high score per Farcaster FID
-- **On-Chain:** Submit high scores to blockchain leaderboard
-- **Leaderboard:** View top 10 players on-chain
+### Difficulty Scaling
 
-### Controls
-- **Click/Tap:** Jump
-- **Mute Button:** Toggle sound
-- **Connect Wallet:** Auto-connects via Farcaster
+**Fun Mode:**
+- Initial speed: 10px per 75ms
+- Speed multiplier: 1.1x every 5 points
+- Example: Score 25 = 2.61x base speed
 
-## Farcaster Integration
+**DEGEN Mode:**
+- Initial speed: Same as Fun Mode
+- Speed multiplier: 1.04x every 2.5 points (2x faster scaling)
+- Reward multiplier: 1.0x + (score × 0.04)
+  - Score 10 → 1.4x rewards
+  - Score 25 → 2.0x rewards
+  - Score 50 → 3.0x rewards
 
-FlowPepe is a fully integrated Farcaster Mini App:
+### DEGEN Mode Reward Formula
 
-- Auto-detects Farcaster environment
-- Displays user's Farcaster username
-- One-click wallet connection via Farcaster connector
-- Manifest at `/.well-known/farcaster.json`
-- Optimized meta tags for sharing
+```
+Base Reward = (Your Score / High Score) × Prize Pool
+Multiplied Reward = Base Reward × (1.0 + score × 0.04)
+Final Reward = min(Multiplied Reward, 50% of pool)
 
-### Farcaster Manifest
+Requirements:
+- Score must reach 80% of day's high score
+- Only your highest score counts per day
+- Unlimited entry attempts (0.002 ETH each)
+```
 
-Account Association verified for domain: `flowpepe.com`
-FID: 873429
+**Example:**
+- Day's high score: 50
+- Your score: 40 (80% of high = qualifies!)
+- Prize pool: 0.1 ETH
+- Base reward: (40/50) × 0.1 = 0.08 ETH
+- Multiplier: 1.0 + (40 × 0.04) = 2.6x
+- Your reward: 0.08 × 2.6 = **0.208 ETH** (capped at 0.05 ETH if exceeds 50%)
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 pepethegame/
 ├── components/
-│   ├── Game.tsx              # Main game component
-│   ├── FlappyBird.tsx        # Pepe character
-│   ├── Pipes.tsx             # Obstacles
-│   ├── Leaderboard.tsx       # On-chain leaderboard display
-│   ├── WalletConnect.tsx     # Wallet connection UI
-│   └── FarcasterProvider.tsx # Farcaster SDK wrapper
-├── contracts/
-│   └── FlowPepeLeaderboard.sol # Smart contract
+│   ├── Game.tsx                 # Main game orchestrator, mode switching
+│   ├── ModeSelection.tsx        # Fun vs DEGEN mode selection UI
+│   ├── FlappyBird.tsx           # Pepe character (animated GIF)
+│   ├── Pipes.tsx                # Obstacle generation and movement
+│   ├── Background.tsx           # Visual background layer
+│   ├── Footer.tsx               # Score display, mute button
+│   ├── Leaderboard.tsx          # Fun Mode leaderboard (on-chain)
+│   ├── DegenLeaderboard.tsx     # DEGEN Mode daily leaderboard
+│   ├── DailyLeaderboard.tsx     # DEGEN Mode day-specific view
+│   ├── HallOfFame.tsx           # DEGEN Mode lifetime earners
+│   ├── ClaimableRewards.tsx     # DEGEN Mode rewards UI
+│   ├── PayoutBreakdown.tsx      # DEGEN Mode reward calculator
+│   ├── WalletConnect.tsx        # Wallet connection button
+│   └── FarcasterProvider.tsx    # Farcaster SDK context
 ├── hooks/
-│   ├── useGame.tsx           # Game state management
-│   ├── useScores.tsx         # Local score tracking
-│   ├── useOnChainScore.tsx   # Blockchain interactions
-│   └── ...
+│   ├── useGame.tsx              # Core game loop, physics, collision
+│   ├── useDegenMode.tsx         # DEGEN Mode contract interactions
+│   ├── useOnChainScore.tsx      # Fun Mode contract interactions
+│   ├── useScores.tsx            # Local storage score tracking
+│   ├── useInterval.tsx          # setInterval React hook
+│   ├── useElementSize.tsx       # ResizeObserver hook
+│   └── useWindowSize.tsx        # Window dimensions hook
+├── contracts/
+│   ├── FlowPepeLeaderboard.sol  # Fun Mode smart contract
+│   └── FlowPepeDegen.sol        # DEGEN Mode smart contract
 ├── lib/
-│   └── wagmi.ts              # Wagmi configuration
+│   ├── wagmi.ts                 # Wagmi configuration, connectors
+│   └── FlowPepeDegen.abi.json   # DEGEN contract ABI
 ├── pages/
-│   ├── index.tsx             # Home page
-│   ├── _app.tsx              # App wrapper
-│   └── _document.tsx         # Meta tags & manifest
+│   ├── index.tsx                # Main game page
+│   ├── _app.tsx                 # Wagmi + React Query providers
+│   └── _document.tsx            # Meta tags, Farcaster manifest
 ├── scripts/
-│   ├── deploy-simple.js      # Contract deployment
-│   └── verify.js             # Verification helper
-└── public/
-    ├── .well-known/
-    │   └── farcaster.json    # Farcaster manifest
-    └── assets...
+│   ├── deploy-simple.js         # Fun Mode deployment
+│   ├── deploy-degen.cjs         # DEGEN Mode deployment
+│   └── verify.js                # Basescan verification helper
+├── public/
+│   ├── pepe.gif                 # Player character sprite
+│   ├── pipe.png                 # Red candlestick obstacle
+│   ├── bg.png                   # Background texture
+│   └── jeet.m4a                 # Background music loop
+└── styles/
+    └── globals.css              # TailwindCSS, Telegram theme vars
 ```
 
-## Development
+## 🛠️ Development
 
 ### Run Locally
-
 ```bash
 npm run dev
 ```
 
 ### Build for Production
-
 ```bash
 npm run build
 npm run start
 ```
 
 ### Export Static Site
-
 ```bash
+npm run build
 npm run export
 ```
 
-## Deployment
+## 🚢 Deployment
 
-### Vercel (Recommended)
+### Smart Contracts
+
+**Deploy FlowPepeLeaderboard (Fun Mode):**
+```bash
+node scripts/deploy-simple.js baseSepolia
+```
+
+**Deploy FlowPepeDegen (DEGEN Mode):**
+```bash
+node scripts/deploy-degen.cjs baseSepolia
+```
+
+**Verify on Basescan:**
+```bash
+# Get instructions
+node scripts/verify.js baseSepolia
+
+# Or manually verify at:
+# https://sepolia.basescan.org/verifyContract
+# Compiler: v0.8.20+commit.a1b79de6
+# Optimization: Yes (200 runs)
+```
+
+### Frontend (Vercel)
 
 1. Push to GitHub
 2. Import project in Vercel
 3. Add environment variables:
    - `NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS`
+   - `NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS`
+   - `NEXT_PUBLIC_BASE_SEPOLIA_RPC` (optional, for better rate limits)
 4. Deploy
-5. Add custom domain: flowpepe.com
+5. Add custom domain (optional)
 
-### Environment Variables
+### Farcaster Mini App
 
-Required for production:
-- `NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS` - Contract address
+1. Create manifest at `public/.well-known/farcaster.json`:
+```json
+{
+  "accountAssociation": {
+    "header": "...",
+    "payload": "...",
+    "signature": "..."
+  },
+  "frame": {
+    "version": "1",
+    "name": "FlowPepe",
+    "iconUrl": "https://flowpepe.com/logo.png",
+    "splashImageUrl": "https://flowpepe.com/splash.png",
+    "splashBackgroundColor": "#ded895",
+    "homeUrl": "https://flowpepe.com"
+  }
+}
+```
 
-Required for deployment only (not in Vercel):
-- `DEPLOYER_PRIVATE_KEY` - Private key for contract deployment
+2. Verify domain ownership via Farcaster Hub
+3. Submit to Farcaster Mini App directory
 
-## Contributing
+## 📊 Gas Costs (Base Network)
 
-Contributions welcome! Please:
+| Action | Estimated Gas | Cost @ 0.5 gwei |
+|--------|---------------|-----------------|
+| **Fun Mode** | | |
+| Submit Score | ~50,000 | $0.015 |
+| **DEGEN Mode** | | |
+| Enter Game | ~65,000 | $0.020 |
+| Submit Score | ~85,000 | $0.026 |
+| Claim Reward | ~55,000 | $0.016 |
+| **Total (DEGEN)** | **~205,000** | **~$0.062** |
+
+*Note: Base L2 gas is 95% cheaper than Ethereum mainnet*
+
+## 🔐 Security
+
+### Smart Contract Security
+- ✅ **ReentrancyGuard:** All money-handling functions protected
+- ✅ **Ownable:** Admin functions restricted to contract owner
+- ✅ **Pull Pattern:** Users claim rewards (no push transfers)
+- ✅ **Input Validation:** Score thresholds, amount checks
+- ✅ **No External Calls:** No arbitrary contract interactions
+- ✅ **Time-Based Logic:** Prevents daily play manipulation
+- ⚠️ **Audit Pending:** Not yet audited (testnet only for now)
+
+### Frontend Security
+- ✅ **No Private Keys Stored:** Wallet connectors handle keys
+- ✅ **Read-Only by Default:** Smart contract calls are view functions
+- ✅ **User Confirmation:** Explicit approval for transactions
+- ✅ **Error Handling:** Graceful failures with retry logic
+- ✅ **Rate Limiting Protection:** Exponential backoff on RPC errors
+
+## 🤝 Contributing
+
+We welcome contributions! To contribute:
 
 1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
+**Areas for Contribution:**
+- UI/UX improvements
+- Additional game modes or power-ups
+- Mobile app version (React Native)
+- Farcaster Frame integration
+- Contract optimizations
+- Bug fixes and testing
 
-MIT License - see LICENSE file for details
+## 📝 License
 
-## Links
+MIT License - see [LICENSE](LICENSE) file for details.
 
-- **Live Game:** https://www.flowpepe.com
+## 🔗 Links
+
+- **Live Game (Web):** https://www.flowpepe.com
+- **Farcaster Mini App:** https://farcaster.xyz/miniapps/qXKHh0xCCqID/flowpepe
 - **GitHub:** https://github.com/Aliserag/pepethegame
-- **Farcaster:** Search "FlowPepe" in Mini Apps
-- **Base Sepolia Contract:** [0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c](https://sepolia.basescan.org/address/0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c)
+- **Base Sepolia Testnet Faucet:** https://www.coinbase.com/faucets/base-ethereum-goerli-faucet
+- **Base Sepolia Contracts:**
+  - Leaderboard: [0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c](https://sepolia.basescan.org/address/0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c)
+  - DEGEN: [0x806e4d33f36886ca9439f2c407505de936498d0e](https://sepolia.basescan.org/address/0x806e4d33f36886ca9439f2c407505de936498d0e)
 
-## Support
+## 💬 Support
 
 - **Issues:** [GitHub Issues](https://github.com/Aliserag/pepethegame/issues)
-- **Farcaster:** Tag @flowpepe (coming soon)
+- **Discussions:** [GitHub Discussions](https://github.com/Aliserag/pepethegame/discussions)
+- **Farcaster:** Tag @flowpepe
+
+## 🎯 Roadmap
+
+### Phase 1: MVP (Completed ✅)
+- [x] Core Flappy Bird mechanics
+- [x] Fun Mode with on-chain leaderboard
+- [x] DEGEN Mode smart contract
+- [x] Prize pool distribution logic
+- [x] Farcaster Mini App integration
+- [x] Base Sepolia deployment
+
+### Phase 2: Polish (Current)
+- [x] Daily leaderboard UI
+- [x] Reward calculation display
+- [x] Hall of Fame (lifetime earners)
+- [x] Claim rewards interface
+- [ ] Mobile-optimized controls
+- [ ] Sound effects (jump, collision, score)
+
+### Phase 3: Mainnet Launch
+- [ ] Smart contract audit
+- [ ] Deploy to Base mainnet
+- [ ] Marketing campaign
+- [ ] Farcaster Frame casts
+- [ ] Community events
+
+### Phase 4: Expansion
+- [ ] Weekly tournaments
+- [ ] NFT rewards for top players
+- [ ] Referral system (earn from invited players)
+- [ ] Multiple difficulty tiers
+- [ ] Power-ups and special modes
+- [ ] Cross-chain support (Optimism, Arbitrum)
 
 ---
 
