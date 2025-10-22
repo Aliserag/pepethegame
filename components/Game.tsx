@@ -322,18 +322,7 @@ export default function Game() {
 
       {showIntro && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-90 z-50">
-          <div className="text-center p-4 max-w-sm mx-auto space-y-4 relative">
-            {/* Leaderboard Button - Top Right (DEGEN Mode only) */}
-            {selectedMode === "degen" && (
-              <button
-                onClick={() => setShowLeaderboardModal(true)}
-                className="absolute top-0 right-0 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all"
-                style={{ fontFamily: "'Press Start 2P', cursive" }}
-              >
-                🏆 Today's Leaderboard
-              </button>
-            )}
-
+          <div className="text-center p-4 max-w-sm mx-auto space-y-4">
             <h1
               className="text-white text-2xl sm:text-3xl md:text-4xl font-bold mb-2"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
@@ -440,18 +429,31 @@ export default function Game() {
               </div>
             )}
 
-            <button
-              onClick={() => {
-                clearError();
-                clearDegenError();
-                setShowIntro(false);
-                setShowModeSelection(true);
-                setSelectedMode(null);
-              }}
-              className="text-gray-400 text-xs hover:text-white mt-2"
-            >
-              ← Back to Mode Selection
-            </button>
+            <div className="flex flex-col gap-2 items-center">
+              <button
+                onClick={() => {
+                  clearError();
+                  clearDegenError();
+                  setShowIntro(false);
+                  setShowModeSelection(true);
+                  setSelectedMode(null);
+                }}
+                className="text-gray-400 text-xs hover:text-white"
+              >
+                ← Back to Mode Selection
+              </button>
+
+              {/* Leaderboard Button - Below Back button (DEGEN Mode only) */}
+              {selectedMode === "degen" && (
+                <button
+                  onClick={() => setShowLeaderboardModal(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-xs transition-all"
+                  style={{ fontFamily: "'Press Start 2P', cursive" }}
+                >
+                  🏆 Today's Leaderboard
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
