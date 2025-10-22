@@ -177,9 +177,12 @@ export default function Game() {
 
   const handleSubmitDegenScore = async () => {
     if (finalScore > 0 && !degenScoreSubmitted && selectedMode === "degen") {
+      clearDegenError(); // Clear any previous errors
       const success = await submitDegenScore(finalScore);
       if (success) {
         setDegenScoreSubmitted(true);
+        // Reload data to update payout breakdown
+        await loadDegenData();
       }
     }
   };
@@ -596,7 +599,7 @@ export default function Game() {
                   </div>
                 )}
 
-                {degenError && !isClaiming && (
+                {degenError && !isClaiming && !degenScoreSubmitted && (
                   <div className="text-red-400 text-xs text-center bg-red-900 bg-opacity-30 p-2 rounded">
                     ❌ {degenError}
                   </div>
