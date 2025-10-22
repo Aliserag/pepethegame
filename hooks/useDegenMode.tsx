@@ -195,45 +195,61 @@ export default function useDegenMode() {
       }) as boolean;
       setHasPlayed(played);
 
-      // Get Hall of Fame (top 10)
-      const [addresses, earnings] = await publicClient.readContract({
-        address: contractAddress,
-        abi: degenAbi,
-        functionName: "getTopEarners",
-        args: [BigInt(10)],
-      }) as [readonly `0x${string}`[], readonly bigint[]];
+      // Get Hall of Fame (top 10) - handle empty case
+      try {
+        const [addresses, earnings] = await publicClient.readContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "getTopEarners",
+          args: [BigInt(10)],
+        }) as [readonly `0x${string}`[], readonly bigint[]];
 
-      const hallOfFameData = addresses.map((addr, i) => ({
-        address: addr,
-        earnings: formatEther(earnings[i]),
-      }));
-      setHallOfFame(hallOfFameData);
+        const hallOfFameData = addresses.map((addr, i) => ({
+          address: addr,
+          earnings: formatEther(earnings[i]),
+        }));
+        setHallOfFame(hallOfFameData);
+      } catch (hofErr) {
+        console.error("Error loading Hall of Fame:", hofErr);
+        setHallOfFame([]);
+      }
 
       // Get user's lifetime earnings
-      const userEarnings = await publicClient.readContract({
-        address: contractAddress,
-        abi: degenAbi,
-        functionName: "lifetimeEarnings",
-        args: [address],
-      }) as bigint;
-      setLifetimeEarnings(formatEther(userEarnings));
+      try {
+        const userEarnings = await publicClient.readContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "lifetimeEarnings",
+          args: [address],
+        }) as bigint;
+        setLifetimeEarnings(formatEther(userEarnings));
+      } catch (earningsErr) {
+        console.error("Error loading lifetime earnings:", earningsErr);
+        setLifetimeEarnings("0");
+      }
 
       // Get claimable rewards
-      const [claimableDays, claimableAmounts] = await publicClient.readContract({
-        address: contractAddress,
-        abi: degenAbi,
-        functionName: "getClaimableRewards",
-        args: [address],
-      }) as [readonly bigint[], readonly bigint[]];
+      try {
+        const [claimableDays, claimableAmounts] = await publicClient.readContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "getClaimableRewards",
+          args: [address],
+        }) as [readonly bigint[], readonly bigint[]];
 
-      const claimableData = claimableDays.map((dayNum, i) => ({
-        day: Number(dayNum),
-        amount: formatEther(claimableAmounts[i]),
-      }));
-      setClaimableRewards(claimableData);
+        const claimableData = claimableDays.map((dayNum, i) => ({
+          day: Number(dayNum),
+          amount: formatEther(claimableAmounts[i]),
+        }));
+        setClaimableRewards(claimableData);
+      } catch (claimErr) {
+        console.error("Error loading claimable rewards:", claimErr);
+        setClaimableRewards([]);
+      }
 
     } catch (err) {
       console.error("Error loading DEGEN data:", err);
+      setError("Failed to load contract data. Please refresh.");
     }
   }, [publicClient, address, contractAddress]);
 
@@ -248,6 +264,8 @@ export default function useDegenMode() {
    */
   const enterGame = useCallback(async (): Promise<boolean> => {
     if (!walletClient || !address || !publicClient) {
+      const errorMsg = `Wallet not connected: walletClient=${!!walletClient}, address=${!!address}, publicClient=${!!publicClient}`;
+      console.error(errorMsg);
       setError("Wallet not connected");
       return false;
     }
@@ -257,6 +275,9 @@ export default function useDegenMode() {
 
     try {
       const fee = parseEther(entryFee);
+      console.log("Entering game with fee:", entryFee, "ETH (", fee.toString(), "wei)");
+      console.log("Contract address:", contractAddress);
+      console.log("Wallet address:", address);
 
       const hash = await walletClient.writeContract({
         address: contractAddress,
@@ -269,6 +290,7 @@ export default function useDegenMode() {
       console.log("Entry transaction sent:", hash);
 
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      console.log("Transaction receipt:", receipt);
 
       if (receipt.status === "success") {
         setHasEntered(true);
@@ -277,18 +299,25 @@ export default function useDegenMode() {
         setIsEntering(false);
         return true;
       } else {
+        console.error("Transaction failed with status:", receipt.status);
         setError("Entry transaction failed");
         setIsEntering(false);
         return false;
       }
     } catch (err: any) {
-      console.error("Error entering game:", err);
+      console.error("Error entering game - Full error:", err);
+      console.error("Error message:", err.message);
+      console.error("Error code:", err.code);
+      console.error("Error details:", JSON.stringify(err, null, 2));
+
       if (err.message?.includes("Already played today")) {
         setError("You've already played today. Come back tomorrow!");
-      } else if (err.message?.includes("rejected")) {
+      } else if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
         setError("Transaction cancelled");
+      } else if (err.message?.includes("insufficient funds")) {
+        setError("Insufficient ETH balance");
       } else {
-        setError("Failed to enter game");
+        setError(`Failed to enter game: ${err.message || "Unknown error"}`);
       }
       setIsEntering(false);
       return false;
