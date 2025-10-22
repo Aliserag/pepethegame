@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 interface DayStats {
   highScore: number;
@@ -26,6 +26,38 @@ const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
   day
 }) => {
   const targetDay = day !== undefined ? day : currentDay;
+  const [timeRemaining, setTimeRemaining] = useState<string>("");
+
+  // Calculate time remaining until day ends
+  useEffect(() => {
+    const updateCountdown = () => {
+      if (!dayStats || dayStats.dayStart === 0) {
+        setTimeRemaining("");
+        return;
+      }
+
+      const dayStartTimestamp = dayStats.dayStart;
+      const dayEndTimestamp = dayStartTimestamp + (24 * 60 * 60); // +1 day in seconds
+      const now = Math.floor(Date.now() / 1000); // Current time in seconds
+      const remaining = dayEndTimestamp - now;
+
+      if (remaining <= 0) {
+        setTimeRemaining("Period ended");
+        return;
+      }
+
+      const hours = Math.floor(remaining / 3600);
+      const minutes = Math.floor((remaining % 3600) / 60);
+      const seconds = remaining % 60;
+
+      setTimeRemaining(`${hours}h ${minutes}m ${seconds}s`);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [dayStats]);
 
   const handleRefresh = () => {
     onRefresh?.();
@@ -81,9 +113,24 @@ const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
       </h2>
 
       {dayStats.dayStart > 0 && (
-        <p className="text-xs text-gray-400 text-center mb-4">
+        <p className="text-xs text-gray-400 text-center mb-1">
           {formatTime(dayStats.dayStart)}
         </p>
+      )}
+
+      {/* Countdown Timer */}
+      {isCurrentDay && timeRemaining && (
+        <div className="bg-yellow-900 border border-yellow-600 p-2 rounded mb-4">
+          <div className="text-xs text-yellow-200 text-center mb-1">
+            ⏱️ Time Remaining
+          </div>
+          <div
+            className="text-yellow-300 text-sm font-bold text-center"
+            style={{ fontFamily: "'Press Start 2P', cursive" }}
+          >
+            {timeRemaining}
+          </div>
+        </div>
       )}
 
       <div className="space-y-3">
