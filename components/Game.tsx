@@ -19,6 +19,7 @@ import HallOfFame from "./HallOfFame";
 import DailyLeaderboard from "./DailyLeaderboard";
 import ClaimableRewards from "./ClaimableRewards";
 import PayoutBreakdown from "./PayoutBreakdown";
+import DegenLeaderboard from "./DegenLeaderboard";
 
 export default function Game() {
   const { user } = useFarcaster();
@@ -71,6 +72,7 @@ export default function Game() {
     playerRank,
     loadingStats,
     playerCurrentDayScore,
+    leaderboard,
   } = useDegenMode();
 
   const {
@@ -625,9 +627,11 @@ export default function Game() {
 
                   {activeTab === "leaderboard" && (
                     <div className="p-2">
-                      <HallOfFame
-                        hallOfFame={hallOfFame}
-                        onRefresh={loadDegenData}
+                      <DegenLeaderboard
+                        leaderboard={leaderboard}
+                        userAddress={address}
+                        playerRank={playerRank}
+                        userReward={potentialReward}
                       />
                     </div>
                   )}

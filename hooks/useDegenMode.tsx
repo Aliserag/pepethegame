@@ -127,6 +127,21 @@ const degenAbi = [
     "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "day", "type": "uint256"},
+      {"internalType": "uint256", "name": "limit", "type": "uint256"}
+    ],
+    "name": "getDayLeaderboard",
+    "outputs": [
+      {"internalType": "address[]", "name": "addresses", "type": "address[]"},
+      {"internalType": "uint256[]", "name": "scores", "type": "uint256[]"},
+      {"internalType": "uint256[]", "name": "multipliers", "type": "uint256[]"},
+      {"internalType": "uint256[]", "name": "rewards", "type": "uint256[]"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
   }
 ] as const;
 
@@ -154,6 +169,7 @@ export default function useDegenMode() {
   const [playerRank, setPlayerRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [playerCurrentDayScore, setPlayerCurrentDayScore] = useState<number>(0); // Track player's current score for the day
+  const [leaderboard, setLeaderboard] = useState<{ address: string; score: number; multiplier: number; reward: string }[]>([]);
 
   // Contract address - will be set after deployment
   const contractAddress = (process.env.NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000") as `0x${string}`;
@@ -314,6 +330,27 @@ export default function useDegenMode() {
       } catch (scoreErr) {
         console.error("Error loading player score:", scoreErr);
         setPlayerCurrentDayScore(0);
+      }
+
+      // Get leaderboard for current day
+      try {
+        const [addresses, scores, multipliers, rewards] = await publicClient.readContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "getDayLeaderboard",
+          args: [BigInt(Number(day)), BigInt(100)], // Get top 100 players
+        }) as [readonly `0x${string}`[], readonly bigint[], readonly bigint[], readonly bigint[]];
+
+        const leaderboardData = addresses.map((addr, i) => ({
+          address: addr,
+          score: Number(scores[i]),
+          multiplier: Number(multipliers[i]),
+          reward: formatEther(rewards[i]),
+        }));
+        setLeaderboard(leaderboardData);
+      } catch (leaderboardErr) {
+        console.error("Error loading leaderboard:", leaderboardErr);
+        setLeaderboard([]);
       }
 
       setLoadingStats(false);
@@ -715,6 +752,7 @@ export default function useDegenMode() {
     error,
     processingMessage,
     playerCurrentDayScore,
+    leaderboard,
 
     // Functions
     enterGame,

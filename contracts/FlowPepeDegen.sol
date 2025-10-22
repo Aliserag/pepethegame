@@ -133,6 +133,12 @@ contract FlowPepeDegen is Ownable, ReentrancyGuard {
             return; // Don't update if score is not higher
         }
 
+        // Add player to day's leaderboard if first score
+        if (!isDayPlayer[day][msg.sender]) {
+            dayPlayers[day].push(msg.sender);
+            isDayPlayer[day][msg.sender] = true;
+        }
+
         // Calculate speed multiplier (increases 0.1x every 2.5 points for DEGEN mode)
         // Formula: 100 + (score * 4) basis points (4 = 0.1x per 2.5 points)
         uint256 multiplier = 100 + (score * 4); // 100 bps = 1.0x
@@ -336,6 +342,87 @@ contract FlowPepeDegen is Ownable, ReentrancyGuard {
         return (addresses, earnings);
     }
 
+    // Track all players for each day
+    mapping(uint256 => address[]) private dayPlayers;
+    mapping(uint256 => mapping(address => bool)) private isDayPlayer;
+
+    /**
+     * @notice Get leaderboard for a specific day
+     * @param day Day number
+     * @param limit Number of top players to return (max 100)
+     * @return addresses Player addresses sorted by score
+     * @return scores Player scores
+     * @return multipliers Player multipliers
+     * @return rewards Calculated rewards for each player
+     */
+    function getDayLeaderboard(uint256 day, uint256 limit) external view returns (
+        address[] memory addresses,
+        uint256[] memory scores,
+        uint256[] memory multipliers,
+        uint256[] memory rewards
+    ) {
+        uint256 count = dayPlayers[day].length;
+
+        if (count == 0) {
+            return (
+                new address[](0),
+                new uint256[](0),
+                new uint256[](0),
+                new uint256[](0)
+            );
+        }
+
+        // Cap limit
+        if (limit > 100) limit = 100;
+        if (limit > count) limit = count;
+
+        // Create arrays to sort
+        addresses = new address[](count);
+        scores = new uint256[](count);
+        multipliers = new uint256[](count);
+        rewards = new uint256[](count);
+
+        // Copy data
+        for (uint256 i = 0; i < count; i++) {
+            addresses[i] = dayPlayers[day][i];
+            scores[i] = playerScores[day][dayPlayers[day][i]].score;
+            multipliers[i] = playerScores[day][dayPlayers[day][i]].multiplier;
+            rewards[i] = this.calculateReward(dayPlayers[day][i], day);
+        }
+
+        // Bubble sort by score (descending)
+        for (uint256 i = 0; i < count - 1; i++) {
+            for (uint256 j = 0; j < count - i - 1; j++) {
+                if (scores[j] < scores[j + 1]) {
+                    // Swap all arrays
+                    (scores[j], scores[j + 1]) = (scores[j + 1], scores[j]);
+                    (multipliers[j], multipliers[j + 1]) = (multipliers[j + 1], multipliers[j]);
+                    (rewards[j], rewards[j + 1]) = (rewards[j + 1], rewards[j]);
+                    (addresses[j], addresses[j + 1]) = (addresses[j + 1], addresses[j]);
+                }
+            }
+        }
+
+        // Trim to limit
+        if (limit < count) {
+            address[] memory trimmedAddresses = new address[](limit);
+            uint256[] memory trimmedScores = new uint256[](limit);
+            uint256[] memory trimmedMultipliers = new uint256[](limit);
+            uint256[] memory trimmedRewards = new uint256[](limit);
+
+            for (uint256 i = 0; i < limit; i++) {
+                trimmedAddresses[i] = addresses[i];
+                trimmedScores[i] = scores[i];
+                trimmedMultipliers[i] = multipliers[i];
+                trimmedRewards[i] = rewards[i];
+            }
+
+            return (trimmedAddresses, trimmedScores, trimmedMultipliers, trimmedRewards);
+        }
+
+        return (addresses, scores, multipliers, rewards);
+    }
+
     /**
      * @notice Get player's rank for a specific day (1-indexed)
      * @return rank Player's position (0 if not played)
@@ -347,12 +434,25 @@ contract FlowPepeDegen is Ownable, ReentrancyGuard {
             return (0, dayStats[day].totalPlayers);
         }
 
-        // Count how many players scored higher
-        rank = 1;
-        // Note: This is inefficient but works for demonstration
-        // In production, would maintain sorted leaderboard
+        // Get all players for the day
+        address[] memory players = dayPlayers[day];
+        uint256 count = players.length;
+        totalPlayers = count;
 
-        return (rank, dayStats[day].totalPlayers);
+        if (count == 0) {
+            return (0, 0);
+        }
+
+        // Count how many players have higher scores
+        rank = 1;
+        for (uint256 i = 0; i < count; i++) {
+            uint256 otherScore = playerScores[day][players[i]].score;
+            if (otherScore > ps.score) {
+                rank++;
+            }
+        }
+
+        return (rank, totalPlayers);
     }
 
     /**
