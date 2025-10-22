@@ -218,6 +218,7 @@ export default function Game() {
   const [degenScoreSubmitted, setDegenScoreSubmitted] = useState(false);
   const [showAlreadyPlayedModal, setShowAlreadyPlayedModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"results" | "leaderboard" | "rewards">("results");
+  const [, setCountdownTick] = useState(0); // Force countdown updates
 
   useEffect(() => {
     if (isGameOver) {
@@ -233,6 +234,16 @@ export default function Game() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isGameOver, lastGameScore]);
+
+  // Update countdown every second
+  useEffect(() => {
+    if (selectedMode === "degen" && showGameOver) {
+      const interval = setInterval(() => {
+        setCountdownTick(prev => prev + 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedMode, showGameOver]);
 
   return (
     <div className="relative w-full h-full">
@@ -489,18 +500,96 @@ export default function Game() {
                 {/* Tab Content */}
                 <div className="min-h-[300px] max-h-[350px] overflow-y-auto">
                   {activeTab === "results" && (
-                    <div className="space-y-3 p-2">
-                      <div className="bg-gray-900 border-2 border-gray-700 p-4 rounded-lg">
-                        <div className="text-gray-400 text-xs mb-1">Score Multiplier</div>
-                        <div className="text-green-400 text-2xl font-bold">{calculateMultiplier(finalScore).toFixed(2)}x</div>
+                    <div className="space-y-4 p-3">
+                      {/* Key Metrics Grid */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
+                          <div className="text-gray-400 text-xs mb-1">Your Score</div>
+                          <div className="text-white text-xl font-bold">{finalScore}</div>
+                        </div>
+                        <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
+                          <div className="text-gray-400 text-xs mb-1">Multiplier</div>
+                          <div className="text-green-400 text-xl font-bold">{calculateMultiplier(finalScore).toFixed(2)}x</div>
+                        </div>
                       </div>
-                      <DailyLeaderboard
-                        currentDay={currentDay}
-                        dayStats={dayStats}
-                        playerRank={playerRank}
-                        loading={loadingStats}
-                        onRefresh={loadDegenData}
-                      />
+
+                      {/* Countdown Timer */}
+                      {dayStats && dayStats.dayStart > 0 && (
+                        <div className="bg-yellow-900 border-2 border-yellow-600 p-3 rounded-lg">
+                          <div className="text-xs text-yellow-200 text-center mb-1">
+                            ⏱️ Time Remaining
+                          </div>
+                          <div
+                            className="text-yellow-300 text-base font-bold text-center"
+                            style={{ fontFamily: "'Press Start 2P', cursive" }}
+                          >
+                            {(() => {
+                              const dayEndTimestamp = dayStats.dayStart + (24 * 60 * 60);
+                              const now = Math.floor(Date.now() / 1000);
+                              const remaining = dayEndTimestamp - now;
+
+                              if (remaining <= 0) return "Period ended";
+
+                              const hours = Math.floor(remaining / 3600);
+                              const minutes = Math.floor((remaining % 3600) / 60);
+                              const seconds = remaining % 60;
+
+                              return `${hours}h ${minutes}m ${seconds}s`;
+                            })()}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Today's Competition */}
+                      <div className="bg-gray-900 border-2 border-gray-700 p-4 rounded-lg">
+                        <h3 className="text-green-400 text-sm font-bold mb-3 text-center"
+                            style={{ fontFamily: "'Press Start 2P', cursive" }}>
+                          📊 Today's Competition
+                        </h3>
+
+                        <div className="space-y-3">
+                          {/* Prize Pool */}
+                          <div className="flex justify-between items-center pb-2 border-b border-gray-700">
+                            <span className="text-gray-400 text-xs">Prize Pool</span>
+                            <span className="text-green-400 text-sm font-bold"
+                                  style={{ fontFamily: "'Press Start 2P', cursive" }}>
+                              {dayStats?.totalPool || "0"} ETH
+                            </span>
+                          </div>
+
+                          {/* High Score */}
+                          {dayStats && dayStats.highScore > 0 && (
+                            <div className="flex justify-between items-center pb-2 border-b border-gray-700">
+                              <span className="text-gray-400 text-xs">High Score</span>
+                              <span className="text-yellow-300 text-sm font-bold"
+                                    style={{ fontFamily: "'Press Start 2P', cursive" }}>
+                                {dayStats.highScore}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Your Rank */}
+                          {playerRank && playerRank.rank > 0 && (
+                            <div className="bg-green-900 bg-opacity-30 p-3 rounded border border-green-700">
+                              <div className="flex justify-between items-center">
+                                <span className="text-green-300 text-xs">Your Rank</span>
+                                <span className="text-green-300 text-base font-bold"
+                                      style={{ fontFamily: "'Press Start 2P', cursive" }}>
+                                  #{playerRank.rank} / {playerRank.totalPlayers}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Total Players */}
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-400 text-xs">Total Players</span>
+                            <span className="text-white text-sm font-bold">
+                              {dayStats?.totalPlayers || 0}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
 
