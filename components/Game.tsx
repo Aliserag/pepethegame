@@ -15,6 +15,9 @@ import { useAccount, useConnect } from "wagmi";
 import _ from "lodash";
 import ModeSelection, { GameMode } from "./ModeSelection";
 import useDegenMode from "../hooks/useDegenMode";
+import HallOfFame from "./HallOfFame";
+import DailyLeaderboard from "./DailyLeaderboard";
+import ClaimableRewards from "./ClaimableRewards";
 
 export default function Game() {
   const { user } = useFarcaster();
@@ -534,10 +537,18 @@ export default function Game() {
               </div>
             )}
 
-            {/* Leaderboard (Fun Mode only) */}
+            {/* Leaderboards */}
             {selectedMode === "fun" && (
               <div className="w-full flex justify-center">
                 <Leaderboard />
+              </div>
+            )}
+
+            {selectedMode === "degen" && (
+              <div className="w-full space-y-4">
+                <DailyLeaderboard />
+                <ClaimableRewards />
+                <HallOfFame />
               </div>
             )}
           </div>
