@@ -153,6 +153,7 @@ export default function useDegenMode() {
   const [dayStats, setDayStats] = useState<{ highScore: number; highScorer: string; totalPool: string; totalPlayers: number; dayStart: number } | null>(null);
   const [playerRank, setPlayerRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [playerCurrentDayScore, setPlayerCurrentDayScore] = useState<number>(0); // Track player's current score for the day
 
   // Contract address - will be set after deployment
   const contractAddress = (process.env.NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000") as `0x${string}`;
@@ -299,6 +300,20 @@ export default function useDegenMode() {
       } catch (rankErr) {
         console.error("Error loading player rank:", rankErr);
         setPlayerRank(null);
+      }
+
+      // Get player's current score for the day
+      try {
+        const [score, multiplier, claimed] = await publicClient.readContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "getMyScore",
+        }) as [bigint, bigint, boolean];
+
+        setPlayerCurrentDayScore(Number(score));
+      } catch (scoreErr) {
+        console.error("Error loading player score:", scoreErr);
+        setPlayerCurrentDayScore(0);
       }
 
       setLoadingStats(false);
@@ -699,6 +714,7 @@ export default function useDegenMode() {
     isClaiming,
     error,
     processingMessage,
+    playerCurrentDayScore,
 
     // Functions
     enterGame,

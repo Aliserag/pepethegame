@@ -70,6 +70,7 @@ export default function Game() {
     dayStats,
     playerRank,
     loadingStats,
+    playerCurrentDayScore,
   } = useDegenMode();
 
   const {
@@ -446,21 +447,49 @@ export default function Game() {
               Score: {finalScore}
             </div>
 
+            {/* DEGEN Mode: Show if new high score for the day */}
+            {selectedMode === "degen" && finalScore > playerCurrentDayScore && finalScore > 0 && (
+              <div
+                className="text-yellow-400 text-lg text-center animate-pulse"
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
+              >
+                🎉 New Daily Best! 🎉
+              </div>
+            )}
+
             {/* DEGEN Mode specific info */}
             {selectedMode === "degen" && (
               <div className="w-full space-y-4">
+                {/* Show warning if score is lower than current best */}
+                {finalScore > 0 && finalScore <= playerCurrentDayScore && !degenScoreSubmitted && (
+                  <div className="bg-yellow-900 bg-opacity-30 border-2 border-yellow-600 p-3 rounded-lg">
+                    <div className="text-yellow-300 text-xs text-center font-bold mb-1">
+                      ⚠️ Lower Score
+                    </div>
+                    <div className="text-gray-300 text-xs text-center">
+                      Your current best today is {playerCurrentDayScore}. Only your highest score counts for rewards.
+                    </div>
+                  </div>
+                )}
+
                 {/* Primary Action Area */}
                 {!degenScoreSubmitted ? (
                   <>
                     <button
                       onClick={handleSubmitDegenScore}
-                      disabled={isSubmittingDegen}
+                      disabled={isSubmittingDegen || (finalScore > 0 && finalScore <= playerCurrentDayScore)}
                       className={`${
-                        isSubmittingDegen ? "bg-gray-600" : "bg-green-600 hover:bg-green-700"
+                        isSubmittingDegen || (finalScore > 0 && finalScore <= playerCurrentDayScore)
+                          ? "bg-gray-600 cursor-not-allowed"
+                          : "bg-green-600 hover:bg-green-700"
                       } text-white font-bold py-3 px-6 rounded-lg text-base w-full transition-all`}
                       style={{ fontFamily: "'Press Start 2P', cursive" }}
                     >
-                      {isSubmittingDegen ? "Processing..." : "Submit Score 🏆"}
+                      {isSubmittingDegen
+                        ? "Processing..."
+                        : finalScore > 0 && finalScore <= playerCurrentDayScore
+                        ? "Score Not Better Than Current Best"
+                        : "Submit Score 🏆"}
                     </button>
                     {degenProcessingMessage && (
                       <div className="text-blue-400 text-xs text-center animate-pulse bg-blue-900 bg-opacity-30 p-2 rounded">
