@@ -249,10 +249,15 @@ export default function Game() {
         setFinalScore(lastGameScore);
         setScoreSubmitted(false);
         setDegenScoreSubmitted(false); // Reset DEGEN submission state
+
+        // For DEGEN mode, reload data to get latest player score
+        if (selectedMode === "degen") {
+          loadDegenData();
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isGameOver, lastGameScore]);
+  }, [isGameOver, lastGameScore, selectedMode]);
 
   // Update countdown every second
   useEffect(() => {
