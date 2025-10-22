@@ -149,6 +149,9 @@ export default function useDegenMode() {
   const [hallOfFame, setHallOfFame] = useState<{ address: string; earnings: string }[]>([]);
   const [lifetimeEarnings, setLifetimeEarnings] = useState("0");
   const [claimableRewards, setClaimableRewards] = useState<{ day: number; amount: string }[]>([]);
+  const [dayStats, setDayStats] = useState<{ highScore: number; highScorer: string; totalPool: string; totalPlayers: number; dayStart: number } | null>(null);
+  const [playerRank, setPlayerRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   // Contract address - will be set after deployment
   const contractAddress = (process.env.NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000") as `0x${string}`;
@@ -160,6 +163,8 @@ export default function useDegenMode() {
     if (!publicClient || !address || contractAddress === "0x0000000000000000000000000000000000000000") {
       return;
     }
+
+    setLoadingStats(true);
 
     try {
       // Get entry fee
@@ -247,9 +252,51 @@ export default function useDegenMode() {
         setClaimableRewards([]);
       }
 
+      // Get current day stats
+      try {
+        const stats = await publicClient.readContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "getDayStats",
+          args: [BigInt(Number(day))],
+        }) as [bigint, string, bigint, bigint, bigint];
+
+        setDayStats({
+          highScore: Number(stats[0]),
+          highScorer: stats[1],
+          totalPool: (Number(stats[2]) / 1e18).toFixed(4),
+          totalPlayers: Number(stats[3]),
+          dayStart: Number(stats[4]),
+        });
+      } catch (statsErr) {
+        console.error("Error loading day stats:", statsErr);
+        setDayStats(null);
+      }
+
+      // Get player's rank for current day
+      try {
+        const [rank, totalPlayers] = await publicClient.readContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "getPlayerRank",
+          args: [address, BigInt(Number(day))],
+        }) as [bigint, bigint];
+
+        setPlayerRank({
+          rank: Number(rank),
+          totalPlayers: Number(totalPlayers),
+        });
+      } catch (rankErr) {
+        console.error("Error loading player rank:", rankErr);
+        setPlayerRank(null);
+      }
+
+      setLoadingStats(false);
+
     } catch (err) {
       console.error("Error loading DEGEN data:", err);
       setError("Failed to load contract data. Please refresh.");
+      setLoadingStats(false);
     }
   }, [publicClient, address, contractAddress]);
 
@@ -548,6 +595,9 @@ export default function useDegenMode() {
     hallOfFame,
     lifetimeEarnings,
     claimableRewards,
+    dayStats,
+    playerRank,
+    loadingStats,
     isEntering,
     isSubmitting,
     isClaiming,

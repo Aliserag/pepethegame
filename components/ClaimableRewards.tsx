@@ -1,33 +1,33 @@
 import React, { useState } from "react";
-import useDegenMode from "../hooks/useDegenMode";
 
-const ClaimableRewards: React.FC = () => {
-  const {
-    claimableRewards,
-    lifetimeEarnings,
-    claimReward,
-    claimAllRewards,
-    isClaiming,
-    error,
-    loadData
-  } = useDegenMode();
+interface ClaimableRewardsProps {
+  claimableRewards: { day: number; amount: string }[];
+  lifetimeEarnings: string;
+  claimReward: (day: number) => Promise<boolean>;
+  claimAllRewards: () => Promise<boolean>;
+  isClaiming: boolean;
+  error: string | null;
+}
+
+const ClaimableRewards: React.FC<ClaimableRewardsProps> = ({
+  claimableRewards,
+  lifetimeEarnings,
+  claimReward,
+  claimAllRewards,
+  isClaiming,
+  error,
+}) => {
 
   const [claimingDay, setClaimingDay] = useState<number | null>(null);
 
   const handleClaimSingle = async (day: number) => {
     setClaimingDay(day);
-    const success = await claimReward(day);
-    if (success) {
-      await loadData();
-    }
+    await claimReward(day);
     setClaimingDay(null);
   };
 
   const handleClaimAll = async () => {
-    const success = await claimAllRewards();
-    if (success) {
-      await loadData();
-    }
+    await claimAllRewards();
   };
 
   function formatEarnings(earnings: string) {

@@ -1,15 +1,12 @@
 import React from "react";
-import useDegenMode from "../hooks/useDegenMode";
 
 interface HallOfFameProps {
+  hallOfFame: { address: string; earnings: string }[];
   onRefresh?: () => void;
 }
 
-const HallOfFame: React.FC<HallOfFameProps> = ({ onRefresh }) => {
-  const { hallOfFame, loadData } = useDegenMode();
-
-  const handleRefresh = async () => {
-    await loadData();
+const HallOfFame: React.FC<HallOfFameProps> = ({ hallOfFame, onRefresh }) => {
+  const handleRefresh = () => {
     onRefresh?.();
   };
 

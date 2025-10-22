@@ -1,7 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { useAccount, usePublicClient } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
-import useDegenMode from "../hooks/useDegenMode";
+import React from "react";
 
 interface DayStats {
   highScore: number;
@@ -12,76 +9,27 @@ interface DayStats {
 }
 
 interface DailyLeaderboardProps {
+  currentDay: number;
+  dayStats: DayStats | null;
+  playerRank: { rank: number; totalPlayers: number } | null;
+  loading: boolean;
+  onRefresh?: () => void;
   day?: number; // If not provided, uses current day
 }
 
-const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({ day }) => {
-  const { address } = useAccount();
-  const publicClient = usePublicClient({ chainId: baseSepolia.id });
-  const { currentDay, getPlayerRank } = useDegenMode();
-  const [dayStats, setDayStats] = useState<DayStats | null>(null);
-  const [playerRank, setPlayerRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const contractAddress = (process.env.NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000") as `0x${string}`;
+const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
+  currentDay,
+  dayStats,
+  playerRank,
+  loading,
+  onRefresh,
+  day
+}) => {
   const targetDay = day !== undefined ? day : currentDay;
 
-  const degenAbi = [
-    {
-      "inputs": [{"internalType": "uint256", "name": "day", "type": "uint256"}],
-      "name": "getDayStats",
-      "outputs": [
-        {"internalType": "uint256", "name": "highScore", "type": "uint256"},
-        {"internalType": "address", "name": "highScorer", "type": "address"},
-        {"internalType": "uint256", "name": "totalPool", "type": "uint256"},
-        {"internalType": "uint256", "name": "totalPlayers", "type": "uint256"},
-        {"internalType": "uint256", "name": "dayStart", "type": "uint256"}
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    }
-  ] as const;
-
-  useEffect(() => {
-    loadDayStats();
-  }, [targetDay, address]);
-
-  async function loadDayStats() {
-    if (!publicClient || contractAddress === "0x0000000000000000000000000000000000000000") {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      // Get day stats
-      const stats = await publicClient.readContract({
-        address: contractAddress,
-        abi: degenAbi,
-        functionName: "getDayStats",
-        args: [BigInt(targetDay)],
-      }) as [bigint, string, bigint, bigint, bigint];
-
-      setDayStats({
-        highScore: Number(stats[0]),
-        highScorer: stats[1],
-        totalPool: (Number(stats[2]) / 1e18).toFixed(4),
-        totalPlayers: Number(stats[3]),
-        dayStart: Number(stats[4]),
-      });
-
-      // Get player's rank if they have an address
-      if (address && getPlayerRank) {
-        const rank = await getPlayerRank(targetDay);
-        setPlayerRank(rank);
-      }
-    } catch (error) {
-      console.error("Error loading daily stats:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const handleRefresh = () => {
+    onRefresh?.();
+  };
 
   function formatAddress(addr: string) {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -222,7 +170,7 @@ const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({ day }) => {
       </div>
 
       <button
-        onClick={loadDayStats}
+        onClick={handleRefresh}
         className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-xs transition-colors"
         style={{ fontFamily: "'Press Start 2P', cursive" }}
       >

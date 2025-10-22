@@ -56,10 +56,17 @@ export default function Game() {
     enterGame,
     submitScore: submitDegenScore,
     claimReward,
+    claimAllRewards,
     calculateMultiplier,
     calculatePotentialEarnings,
     loadData: loadDegenData,
     clearError: clearDegenError,
+    hallOfFame,
+    claimableRewards,
+    lifetimeEarnings,
+    dayStats,
+    playerRank,
+    loadingStats,
   } = useDegenMode();
 
   const {
@@ -546,9 +553,25 @@ export default function Game() {
 
             {selectedMode === "degen" && (
               <div className="w-full space-y-4">
-                <DailyLeaderboard />
-                <ClaimableRewards />
-                <HallOfFame />
+                <DailyLeaderboard
+                  currentDay={currentDay}
+                  dayStats={dayStats}
+                  playerRank={playerRank}
+                  loading={loadingStats}
+                  onRefresh={loadDegenData}
+                />
+                <ClaimableRewards
+                  claimableRewards={claimableRewards}
+                  lifetimeEarnings={lifetimeEarnings}
+                  claimReward={claimReward}
+                  claimAllRewards={claimAllRewards}
+                  isClaiming={isClaiming}
+                  error={degenError}
+                />
+                <HallOfFame
+                  hallOfFame={hallOfFame}
+                  onRefresh={loadDegenData}
+                />
               </div>
             )}
           </div>
