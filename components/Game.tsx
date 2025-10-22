@@ -54,6 +54,7 @@ export default function Game() {
     isSubmitting: isSubmittingDegen,
     isClaiming,
     error: degenError,
+    processingMessage: degenProcessingMessage,
     enterGame,
     submitScore: submitDegenScore,
     claimReward,
@@ -366,16 +367,23 @@ export default function Game() {
             )}
 
             {selectedMode === "degen" && !hasEntered && (
-              <button
-                onClick={handleDegenEntry}
-                disabled={isEntering}
-                className={`${
-                  isEntering ? "bg-gray-600" : "bg-green-600 hover:bg-green-700"
-                } text-white font-bold py-3 px-6 rounded-lg text-sm w-full`}
-                style={{ fontFamily: "'Press Start 2P', cursive" }}
-              >
-                {isEntering ? "Entering..." : `Pay ${entryFee} ETH to Enter`}
-              </button>
+              <>
+                <button
+                  onClick={handleDegenEntry}
+                  disabled={isEntering}
+                  className={`${
+                    isEntering ? "bg-gray-600" : "bg-green-600 hover:bg-green-700"
+                  } text-white font-bold py-3 px-6 rounded-lg text-sm w-full`}
+                  style={{ fontFamily: "'Press Start 2P', cursive" }}
+                >
+                  {isEntering ? "Processing..." : `Pay ${entryFee} ETH to Enter`}
+                </button>
+                {degenProcessingMessage && (
+                  <div className="text-blue-400 text-xs text-center animate-pulse bg-blue-900 bg-opacity-30 p-2 rounded">
+                    ⏳ {degenProcessingMessage}
+                  </div>
+                )}
+              </>
             )}
 
             {selectedMode === "degen" && hasEntered && (
@@ -436,16 +444,23 @@ export default function Game() {
               <div className="w-full space-y-4">
                 {/* Primary Action Area */}
                 {!degenScoreSubmitted ? (
-                  <button
-                    onClick={handleSubmitDegenScore}
-                    disabled={isSubmittingDegen}
-                    className={`${
-                      isSubmittingDegen ? "bg-gray-600" : "bg-green-600 hover:bg-green-700"
-                    } text-white font-bold py-3 px-6 rounded-lg text-base w-full transition-all`}
-                    style={{ fontFamily: "'Press Start 2P', cursive" }}
-                  >
-                    {isSubmittingDegen ? "Submitting..." : "Submit Score 🏆"}
-                  </button>
+                  <>
+                    <button
+                      onClick={handleSubmitDegenScore}
+                      disabled={isSubmittingDegen}
+                      className={`${
+                        isSubmittingDegen ? "bg-gray-600" : "bg-green-600 hover:bg-green-700"
+                      } text-white font-bold py-3 px-6 rounded-lg text-base w-full transition-all`}
+                      style={{ fontFamily: "'Press Start 2P', cursive" }}
+                    >
+                      {isSubmittingDegen ? "Processing..." : "Submit Score 🏆"}
+                    </button>
+                    {degenProcessingMessage && (
+                      <div className="text-blue-400 text-xs text-center animate-pulse bg-blue-900 bg-opacity-30 p-2 rounded">
+                        ⏳ {degenProcessingMessage}
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="bg-gradient-to-r from-green-900 to-emerald-900 border-2 border-green-500 p-4 rounded-lg">
                     <div className="text-green-400 text-sm text-center font-bold mb-2">
@@ -505,17 +520,32 @@ export default function Game() {
                 <div className="min-h-[300px] max-h-[350px] overflow-y-auto">
                   {activeTab === "results" && (
                     <div className="space-y-4 p-3">
-                      {/* Key Metrics Grid */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
-                          <div className="text-gray-400 text-xs mb-1">Your Score</div>
-                          <div className="text-white text-xl font-bold">{finalScore}</div>
+                      {/* Current Rank and Anticipated Earnings - Most Important */}
+                      {playerRank && playerRank.rank > 0 && (
+                        <div
+                          className="bg-gradient-to-r from-green-900 to-emerald-900 border-2 border-green-500 p-4 rounded-lg relative group"
+                          title="Your current rank and projected earnings based on scores so far. This can change if other players score higher."
+                        >
+                          <div className="flex justify-between items-center">
+                            <div className="flex-1">
+                              <div className="text-green-300 text-xs mb-1">Current Rank</div>
+                              <div className="text-white text-2xl font-bold" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+                                #{playerRank.rank}
+                              </div>
+                            </div>
+                            <div className="flex-1 text-right">
+                              <div className="text-green-300 text-xs mb-1">Anticipated Earnings</div>
+                              <div className="text-yellow-300 text-2xl font-bold" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+                                {potentialReward || "0"} ETH
+                              </div>
+                            </div>
+                          </div>
+                          {/* Tooltip on hover */}
+                          <div className="absolute hidden group-hover:block bottom-full left-0 right-0 mb-2 bg-gray-900 border border-green-500 p-2 rounded text-xs text-gray-300 z-10">
+                            💡 Projected earnings based on current scores. This can change if other players score higher before the period ends.
+                          </div>
                         </div>
-                        <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
-                          <div className="text-gray-400 text-xs mb-1">Multiplier</div>
-                          <div className="text-green-400 text-xl font-bold">{calculateMultiplier(finalScore).toFixed(2)}x</div>
-                        </div>
-                      </div>
+                      )}
 
                       {/* Countdown Timer */}
                       {dayStats && dayStats.dayStart > 0 && (
@@ -544,26 +574,47 @@ export default function Game() {
                         </div>
                       )}
 
-                      {/* Payout Breakdown */}
-                      <PayoutBreakdown
-                        dayStats={dayStats ? {
-                          highScore: dayStats.highScore,
-                          totalPool: dayStats.totalPool,
-                        } : null}
-                        playerScore={finalScore}
-                        multiplier={calculateMultiplier(finalScore)}
-                        minScoreThreshold={dayStats ? Math.floor(dayStats.highScore * 0.8) : 0}
-                      />
+                      {/* Example Payouts with tooltips - Simplified */}
+                      {dayStats && dayStats.highScore > 0 && (
+                        <div className="bg-gray-900 border-2 border-gray-700 p-3 rounded-lg">
+                          <div className="text-green-400 text-xs mb-2 text-center" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+                            💰 Example Payouts
+                          </div>
+                          <div className="space-y-2">
+                            {[
+                              { label: "#1", percent: 1.0, color: "text-yellow-300" },
+                              { label: "#2", percent: 0.95, color: "text-gray-300" },
+                              { label: "#3", percent: 0.9, color: "text-orange-300" },
+                              { label: "Min", percent: 0.8, color: "text-gray-400" },
+                            ].map((item, idx) => {
+                              const score = Math.floor(dayStats.highScore * item.percent);
+                              const multiplier = 100 + score * 4;
+                              const poolAmount = parseFloat(dayStats.totalPool);
+                              const baseReward = (score / dayStats.highScore) * poolAmount;
+                              const multipliedReward = (baseReward * multiplier) / 100;
+                              const maxPayout = poolAmount * 0.5;
+                              const payout = Math.min(multipliedReward, maxPayout);
 
-                      {/* Your Rank */}
-                      {playerRank && playerRank.rank > 0 && (
-                        <div className="bg-green-900 bg-opacity-30 p-3 rounded-lg border-2 border-green-700">
-                          <div className="flex justify-between items-center">
-                            <span className="text-green-300 text-xs">Your Rank</span>
-                            <span className="text-green-300 text-base font-bold"
-                                  style={{ fontFamily: "'Press Start 2P', cursive" }}>
-                              #{playerRank.rank} / {playerRank.totalPlayers}
-                            </span>
+                              return (
+                                <div
+                                  key={idx}
+                                  className="flex justify-between items-center p-2 bg-gray-800 rounded border border-gray-700 relative group"
+                                  title={`If you score ${score} (${(item.percent * 100).toFixed(0)}% of high score) with ${(multiplier/100).toFixed(2)}x multiplier`}
+                                >
+                                  <span className={`text-sm ${item.color}`}>{item.label}</span>
+                                  <span className={`text-sm font-bold ${item.color}`}>
+                                    ~{payout.toFixed(4)} ETH
+                                  </span>
+                                  {/* Tooltip */}
+                                  <div className="absolute hidden group-hover:block bottom-full left-0 right-0 mb-1 bg-gray-900 border border-gray-600 p-2 rounded text-xs text-gray-300 z-10">
+                                    Score: {score} • Multiplier: {(multiplier/100).toFixed(2)}x • {(item.percent * 100).toFixed(0)}% of high score
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="mt-2 text-xs text-gray-500 text-center">
+                            Hover for details
                           </div>
                         </div>
                       )}
@@ -593,13 +644,7 @@ export default function Game() {
                   )}
                 </div>
 
-                {isSubmittingDegen && (
-                  <div className="text-green-400 text-xs text-center animate-pulse">
-                    📡 Transaction in progress...
-                  </div>
-                )}
-
-                {degenError && !isClaiming && !degenScoreSubmitted && (
+                {degenError && !isClaiming && !degenScoreSubmitted && !degenProcessingMessage && (
                   <div className="text-red-400 text-xs text-center bg-red-900 bg-opacity-30 p-2 rounded">
                     ❌ {degenError}
                   </div>

@@ -139,6 +139,7 @@ export default function useDegenMode() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [processingMessage, setProcessingMessage] = useState<string | null>(null);
 
   const [hasPlayed, setHasPlayed] = useState(false);
   const [hasEntered, setHasEntered] = useState(false);
@@ -331,58 +332,90 @@ export default function useDegenMode() {
 
     setIsEntering(true);
     setError(null);
+    setProcessingMessage("Preparing transaction...");
 
-    try {
-      const fee = parseEther(entryFee);
-      console.log("Entering game with fee:", entryFee, "ETH (", fee.toString(), "wei)");
-      console.log("Contract address:", contractAddress);
-      console.log("Wallet address:", address);
+    // Retry logic with exponential backoff
+    const maxRetries = 3;
+    let retryCount = 0;
 
-      const hash = await walletClient.writeContract({
-        address: contractAddress,
-        abi: degenAbi,
-        functionName: "enterGame",
-        value: fee,
-        chain: baseSepolia,
-      });
+    while (retryCount <= maxRetries) {
+      try {
+        const fee = parseEther(entryFee);
+        console.log("Entering game with fee:", entryFee, "ETH (", fee.toString(), "wei)");
+        console.log("Contract address:", contractAddress);
+        console.log("Wallet address:", address);
 
-      console.log("Entry transaction sent:", hash);
+        setProcessingMessage("Confirm transaction in wallet...");
 
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      console.log("Transaction receipt:", receipt);
+        const hash = await walletClient.writeContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "enterGame",
+          value: fee,
+          chain: baseSepolia,
+        });
 
-      if (receipt.status === "success") {
-        setHasEntered(true);
-        setHasPlayed(true);
-        await loadData();
-        setIsEntering(false);
-        return true;
-      } else {
-        console.error("Transaction failed with status:", receipt.status);
-        setError("Entry transaction failed");
+        console.log("Entry transaction sent:", hash);
+        setProcessingMessage("Transaction submitted. Waiting for confirmation...");
+
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+        console.log("Transaction receipt:", receipt);
+
+        if (receipt.status === "success") {
+          setProcessingMessage("Success! Loading game data...");
+          setHasEntered(true);
+          setHasPlayed(true);
+          await loadData();
+          setIsEntering(false);
+          setProcessingMessage(null);
+          return true;
+        } else {
+          console.error("Transaction failed with status:", receipt.status);
+          setError("Entry transaction failed");
+          setIsEntering(false);
+          setProcessingMessage(null);
+          return false;
+        }
+      } catch (err: any) {
+        console.error(`Error entering game (attempt ${retryCount + 1}/${maxRetries + 1}) - Full error:`, err);
+        console.error("Error message:", err.message);
+        console.error("Error code:", err.code);
+
+        // Check if it's a rate limit error
+        if (err.message?.includes("rate limit")) {
+          retryCount++;
+          if (retryCount <= maxRetries) {
+            const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s, 8s
+            console.log(`Rate limited. Retrying in ${waitTime/1000}s...`);
+            setProcessingMessage(`Network busy. Auto-retrying in ${waitTime/1000}s... (${retryCount}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue; // Retry
+          } else {
+            setError("Network too busy. Please try again in 30 seconds.");
+            setIsEntering(false);
+            setProcessingMessage(null);
+            return false;
+          }
+        }
+
+        // Other errors - don't retry
+        setProcessingMessage(null);
+        if (err.message?.includes("Already played today")) {
+          setError("You've already played today. Come back tomorrow!");
+        } else if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
+          setError("Transaction cancelled");
+        } else if (err.message?.includes("insufficient funds")) {
+          setError("Insufficient ETH balance");
+        } else {
+          setError(`Failed to enter game: ${err.message || "Unknown error"}`);
+        }
         setIsEntering(false);
         return false;
       }
-    } catch (err: any) {
-      console.error("Error entering game - Full error:", err);
-      console.error("Error message:", err.message);
-      console.error("Error code:", err.code);
-      console.error("Error details:", JSON.stringify(err, null, 2));
-
-      if (err.message?.includes("rate limit")) {
-        setError("RPC rate limit reached. Please wait a moment and try again, or configure an Alchemy API key.");
-      } else if (err.message?.includes("Already played today")) {
-        setError("You've already played today. Come back tomorrow!");
-      } else if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
-        setError("Transaction cancelled");
-      } else if (err.message?.includes("insufficient funds")) {
-        setError("Insufficient ETH balance");
-      } else {
-        setError(`Failed to enter game: ${err.message || "Unknown error"}`);
-      }
-      setIsEntering(false);
-      return false;
     }
+
+    setIsEntering(false);
+    return false;
   }, [walletClient, address, publicClient, contractAddress, entryFee, loadData]);
 
   /**
@@ -401,6 +434,7 @@ export default function useDegenMode() {
 
     setIsSubmitting(true);
     setError(null);
+    setProcessingMessage("Preparing score submission...");
 
     // Retry logic with exponential backoff
     const maxRetries = 3;
@@ -408,6 +442,8 @@ export default function useDegenMode() {
 
     while (retryCount <= maxRetries) {
       try {
+        setProcessingMessage("Confirm transaction in wallet...");
+
         const hash = await walletClient.writeContract({
           address: contractAddress,
           abi: degenAbi,
@@ -417,10 +453,12 @@ export default function useDegenMode() {
         });
 
         console.log("Score submission transaction sent:", hash);
+        setProcessingMessage("Transaction submitted. Waiting for confirmation...");
 
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
         if (receipt.status === "success") {
+          setProcessingMessage("Success! Calculating rewards...");
           // Calculate potential reward
           const reward = await publicClient.readContract({
             address: contractAddress,
@@ -431,10 +469,12 @@ export default function useDegenMode() {
           setPotentialReward(formatEther(reward));
 
           setIsSubmitting(false);
+          setProcessingMessage(null);
           return true;
         } else {
           setError("Score submission failed");
           setIsSubmitting(false);
+          setProcessingMessage(null);
           return false;
         }
       } catch (err: any) {
@@ -446,17 +486,19 @@ export default function useDegenMode() {
           if (retryCount <= maxRetries) {
             const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s, 8s
             console.log(`Rate limited. Retrying in ${waitTime/1000}s...`);
-            setError(`Rate limited. Retrying in ${waitTime/1000}s... (Attempt ${retryCount}/${maxRetries + 1})`);
+            setProcessingMessage(`Network busy. Auto-retrying in ${waitTime/1000}s... (${retryCount}/${maxRetries})`);
             await new Promise(resolve => setTimeout(resolve, waitTime));
             continue; // Retry
           } else {
-            setError("RPC rate limit reached after multiple attempts. Please wait 30 seconds and try again.");
+            setError("Network too busy. Please try again in 30 seconds.");
             setIsSubmitting(false);
+            setProcessingMessage(null);
             return false;
           }
         }
 
         // Other errors - don't retry
+        setProcessingMessage(null);
         if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
           setError("Transaction cancelled");
         } else if (err.message?.includes("insufficient funds")) {
@@ -656,6 +698,7 @@ export default function useDegenMode() {
     isSubmitting,
     isClaiming,
     error,
+    processingMessage,
 
     // Functions
     enterGame,
