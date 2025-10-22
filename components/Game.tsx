@@ -181,11 +181,17 @@ export default function Game() {
 
   const handleSubmitDegenScore = async () => {
     if (finalScore > 0 && !degenScoreSubmitted && selectedMode === "degen") {
+      // Prevent submission if score is not better than current best
+      if (finalScore <= playerCurrentDayScore) {
+        clearDegenError();
+        return;
+      }
+
       clearDegenError(); // Clear any previous errors
       const success = await submitDegenScore(finalScore);
       if (success) {
         setDegenScoreSubmitted(true);
-        // Reload data to update payout breakdown
+        // Reload data to update payout breakdown and player's current score
         await loadDegenData();
       }
     }
