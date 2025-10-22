@@ -310,7 +310,9 @@ export default function useDegenMode() {
       console.error("Error code:", err.code);
       console.error("Error details:", JSON.stringify(err, null, 2));
 
-      if (err.message?.includes("Already played today")) {
+      if (err.message?.includes("rate limit")) {
+        setError("RPC rate limit reached. Please wait a moment and try again, or configure an Alchemy API key.");
+      } else if (err.message?.includes("Already played today")) {
         setError("You've already played today. Come back tomorrow!");
       } else if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
         setError("Transaction cancelled");
