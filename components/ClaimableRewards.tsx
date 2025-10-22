@@ -52,8 +52,8 @@ const ClaimableRewards: React.FC<ClaimableRewardsProps> = ({
       </h2>
 
       {/* Lifetime Earnings */}
-      <div className="bg-gradient-to-r from-purple-900 to-pink-900 border-2 border-purple-500 p-4 rounded mb-4">
-        <p className="text-xs text-purple-200 text-center mb-1">
+      <div className="bg-gradient-to-r from-green-900 to-emerald-900 border-2 border-green-500 p-4 rounded mb-4">
+        <p className="text-xs text-green-200 text-center mb-1">
           Lifetime Earnings
         </p>
         <p
@@ -94,12 +94,12 @@ const ClaimableRewards: React.FC<ClaimableRewardsProps> = ({
               >
                 <div className="flex flex-col">
                   <span
-                    className="text-sm text-blue-400 font-bold"
+                    className="text-sm text-white font-bold"
                     style={{ fontFamily: "'Press Start 2P', cursive" }}
                   >
                     Day {reward.day}
                   </span>
-                  <span className="text-xs text-gray-400 mt-1">
+                  <span className="text-xs text-green-400 mt-1">
                     {formatEarnings(reward.amount)}
                   </span>
                 </div>
@@ -145,8 +145,8 @@ const ClaimableRewards: React.FC<ClaimableRewardsProps> = ({
       )}
 
       {/* Info Text */}
-      <div className="mt-4 p-3 bg-blue-900 border border-blue-700 rounded">
-        <p className="text-xs text-blue-200 leading-relaxed">
+      <div className="mt-4 p-3 bg-gray-800 border border-gray-700 rounded">
+        <p className="text-xs text-gray-300 leading-relaxed">
           💡 <strong>Tip:</strong> Rewards never expire! You can claim them whenever you want.
           Each successful claim adds to your lifetime earnings and Hall of Fame ranking.
         </p>

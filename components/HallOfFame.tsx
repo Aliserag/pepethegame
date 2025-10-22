@@ -24,7 +24,7 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ hallOfFame, onRefresh }) => {
   return (
     <div className="w-full max-w-md bg-gray-900 rounded-lg p-4 text-white shadow-xl">
       <h2
-        className="text-xl font-bold mb-4 text-center text-yellow-400"
+        className="text-xl font-bold mb-4 text-center text-green-400"
         style={{ fontFamily: "'Press Start 2P', cursive" }}
       >
         🏆 Hall of Fame
@@ -94,7 +94,7 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ hallOfFame, onRefresh }) => {
 
       <button
         onClick={handleRefresh}
-        className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded text-xs transition-colors"
+        className="mt-4 w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded text-xs transition-colors"
         style={{ fontFamily: "'Press Start 2P', cursive" }}
       >
         Refresh

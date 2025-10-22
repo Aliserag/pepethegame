@@ -490,9 +490,9 @@ export default function Game() {
                 <div className="min-h-[300px] max-h-[350px] overflow-y-auto">
                   {activeTab === "results" && (
                     <div className="space-y-3 p-2">
-                      <div className="bg-gray-800 bg-opacity-70 border border-gray-700 p-4 rounded-lg">
-                        <div className="text-gray-400 text-xs mb-1">Multiplier</div>
-                        <div className="text-white text-2xl font-bold">{calculateMultiplier(finalScore).toFixed(2)}x</div>
+                      <div className="bg-gray-900 border-2 border-gray-700 p-4 rounded-lg">
+                        <div className="text-gray-400 text-xs mb-1">Score Multiplier</div>
+                        <div className="text-green-400 text-2xl font-bold">{calculateMultiplier(finalScore).toFixed(2)}x</div>
                       </div>
                       <DailyLeaderboard
                         currentDay={currentDay}
@@ -528,7 +528,7 @@ export default function Game() {
                 </div>
 
                 {isSubmittingDegen && (
-                  <div className="text-blue-400 text-xs text-center animate-pulse">
+                  <div className="text-green-400 text-xs text-center animate-pulse">
                     📡 Transaction in progress...
                   </div>
                 )}

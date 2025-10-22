@@ -74,7 +74,7 @@ const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
   return (
     <div className="w-full max-w-md bg-gray-900 rounded-lg p-4 text-white shadow-xl">
       <h2
-        className="text-xl font-bold mb-2 text-center text-blue-400"
+        className="text-xl font-bold mb-2 text-center text-green-400"
         style={{ fontFamily: "'Press Start 2P', cursive" }}
       >
         {isCurrentDay ? "📊 Today's Stats" : `📅 Day ${targetDay} Stats`}
@@ -105,7 +105,7 @@ const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-400">Total Players</span>
             <span
-              className="text-lg text-blue-400 font-bold"
+              className="text-lg text-white font-bold"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
               {dayStats.totalPlayers}
@@ -138,17 +138,17 @@ const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
 
         {/* Player's Rank (if applicable) */}
         {playerRank && playerRank.rank > 0 && (
-          <div className="bg-purple-900 border-2 border-purple-500 p-3 rounded">
+          <div className="bg-green-900 border-2 border-green-500 p-3 rounded">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-purple-300">Your Rank</span>
+              <span className="text-sm text-green-300">Your Rank</span>
               <span
-                className="text-lg text-purple-300 font-bold"
+                className="text-lg text-green-300 font-bold"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
                 #{playerRank.rank}
               </span>
             </div>
-            <p className="text-xs text-purple-200 mt-1 text-center">
+            <p className="text-xs text-green-200 mt-1 text-center">
               You placed {playerRank.rank} out of {playerRank.totalPlayers} players!
             </p>
           </div>
@@ -171,7 +171,7 @@ const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
 
       <button
         onClick={handleRefresh}
-        className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-xs transition-colors"
+        className="mt-4 w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded text-xs transition-colors"
         style={{ fontFamily: "'Press Start 2P', cursive" }}
       >
         Refresh
