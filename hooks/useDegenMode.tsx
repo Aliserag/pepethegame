@@ -255,9 +255,9 @@ export default function useDegenMode() {
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 10000); // Refresh every 10s
-    return () => clearInterval(interval);
-  }, [loadData]);
+    // Removed auto-refresh to prevent infinite loops and reduce RPC calls
+    // Users can manually refresh using the refresh buttons on components
+  }, [publicClient, address, contractAddress]);
 
   /**
    * Enter game (pay entry fee)
