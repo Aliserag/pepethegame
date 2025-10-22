@@ -13,16 +13,24 @@ const WalletConnect: React.FC = () => {
     setIsMounted(true);
   }, []);
 
+  // Filter out Flow Wallet and other unwanted connectors
+  const filteredConnectors = connectors.filter(
+    (connector) =>
+      connector.id !== 'flow' &&
+      connector.name !== 'Flow Wallet' &&
+      connector.id !== 'flowWallet'
+  );
+
   // Debug logging
   useEffect(() => {
     console.log("=== WalletConnect Debug ===");
-    console.log("Available connectors:", connectors.map(c => ({ id: c.id, name: c.name })));
+    console.log("Available connectors:", filteredConnectors.map(c => ({ id: c.id, name: c.name })));
     console.log("Is connected:", isConnected);
     console.log("Address:", address);
     console.log("Connect error:", error);
-  }, [connectors, isConnected, address, error]);
+  }, [filteredConnectors, isConnected, address, error]);
 
-  const farcasterConnector = connectors.find(
+  const farcasterConnector = filteredConnectors.find(
     (connector) => connector.id === "farcasterMiniApp"
   );
 
@@ -103,7 +111,7 @@ const WalletConnect: React.FC = () => {
               <div className="text-white text-xs mb-2" style={{ fontFamily: "'Press Start 2P', cursive" }}>
                 Choose Wallet:
               </div>
-              {connectors.map((connector) => (
+              {filteredConnectors.map((connector) => (
                 <button
                   key={connector.id}
                   onClick={() => handleConnect(connector)}
@@ -127,7 +135,7 @@ const WalletConnect: React.FC = () => {
             </div>
           )}
 
-          {!farcasterConnector && connectors.length === 0 && (
+          {!farcasterConnector && filteredConnectors.length === 0 && (
             <div className="mt-2 text-yellow-400 text-xs">
               No connectors available
             </div>

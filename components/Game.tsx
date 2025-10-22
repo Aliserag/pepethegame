@@ -446,7 +446,8 @@ export default function Game() {
               </div>
             )}
 
-            <div className="flex flex-col gap-2 items-center">
+            <div className="flex flex-col gap-2 items-center w-full">
+              {/* Home Button */}
               <button
                 onClick={() => {
                   clearError();
@@ -455,16 +456,17 @@ export default function Game() {
                   setShowModeSelection(true);
                   setSelectedMode(null);
                 }}
-                className="text-gray-400 text-xs hover:text-white"
+                className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm w-full"
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
-                ← Back to Mode Selection
+                🏠 Home
               </button>
 
-              {/* Leaderboard Button - Below Back button (DEGEN Mode only) */}
+              {/* Leaderboard Button (DEGEN Mode only) */}
               {selectedMode === "degen" && (
                 <button
                   onClick={() => setShowLeaderboardModal(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-xs transition-all"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-xs transition-all w-full"
                   style={{ fontFamily: "'Press Start 2P', cursive" }}
                 >
                   🏆 Today's Leaderboard
