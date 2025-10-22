@@ -160,17 +160,10 @@ export default function useDegenMode() {
    * Load initial data
    */
   const loadData = useCallback(async () => {
-    console.log("🔄 loadData called at:", new Date().toISOString());
-    console.log("  - publicClient:", !!publicClient);
-    console.log("  - address:", address);
-    console.log("  - contractAddress:", contractAddress);
-
     if (!publicClient || !address || contractAddress === "0x0000000000000000000000000000000000000000") {
-      console.log("⚠️ loadData skipped - missing dependencies");
       return;
     }
 
-    console.log("✅ loadData proceeding - making RPC calls");
     setLoadingStats(true);
 
     try {
@@ -308,16 +301,9 @@ export default function useDegenMode() {
   }, [publicClient, address, contractAddress]);
 
   useEffect(() => {
-    console.log("📍 useDegenMode useEffect triggered:");
-    console.log("  - address:", address);
-    console.log("  - contractAddress:", contractAddress);
-
     // Only load data if we have all required dependencies and address just became available
     if (publicClient && address && contractAddress !== "0x0000000000000000000000000000000000000000") {
-      console.log("  ➡️ Calling loadData() from useEffect");
       loadData();
-    } else {
-      console.log("  ⏭️ Skipping loadData() - dependencies not ready");
     }
     // Deliberately NOT including loadData to prevent re-runs when publicClient reference changes
     // eslint-disable-next-line react-hooks/exhaustive-deps

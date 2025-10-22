@@ -122,6 +122,7 @@ export default function Game() {
     setIsNewHighScore(false);
     setCurrentOnChainScore(0);
     setDegenScoreSubmitted(false);
+    setActiveTab("results"); // Reset to results tab
     clearError();
     clearDegenError();
 
