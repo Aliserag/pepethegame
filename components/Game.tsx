@@ -209,6 +209,7 @@ export default function Game() {
 
   const [degenScoreSubmitted, setDegenScoreSubmitted] = useState(false);
   const [showAlreadyPlayedModal, setShowAlreadyPlayedModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<"results" | "leaderboard" | "rewards">("results");
 
   useEffect(() => {
     if (isGameOver) {
@@ -409,42 +410,114 @@ export default function Game() {
 
             {/* DEGEN Mode specific info */}
             {selectedMode === "degen" && (
-              <div className="w-full space-y-3">
-                <div className="bg-green-900 bg-opacity-50 border-2 border-green-500 p-3 rounded-lg">
-                  <div className="text-green-300 text-xs mb-1">Speed Multiplier</div>
-                  <div className="text-white text-xl font-bold">{calculateMultiplier(finalScore).toFixed(2)}x</div>
-                </div>
-
-                {degenScoreSubmitted && potentialReward !== "0" && (
-                  <div className="bg-yellow-900 bg-opacity-50 border-2 border-yellow-500 p-3 rounded-lg">
-                    <div className="text-yellow-300 text-xs mb-1">Your Earnings</div>
-                    <div className="text-white text-xl font-bold">{potentialReward} ETH</div>
-                    <div className="text-gray-400 text-xs mt-1">
-                      Rewards can be claimed after the period ends!
-                    </div>
-                  </div>
-                )}
-
-                {!degenScoreSubmitted && (
+              <div className="w-full space-y-4">
+                {/* Primary Action Area */}
+                {!degenScoreSubmitted ? (
                   <button
                     onClick={handleSubmitDegenScore}
                     disabled={isSubmittingDegen}
                     className={`${
                       isSubmittingDegen ? "bg-gray-600" : "bg-green-600 hover:bg-green-700"
-                    } text-white font-bold py-3 px-6 rounded-lg text-sm md:text-base w-full`}
+                    } text-white font-bold py-3 px-6 rounded-lg text-base w-full transition-all`}
                     style={{ fontFamily: "'Press Start 2P', cursive" }}
                   >
-                    {isSubmittingDegen ? "Submitting Score..." : "Submit Score to Pool 🏆"}
+                    {isSubmittingDegen ? "Submitting..." : "Submit Score 🏆"}
                   </button>
-                )}
-
-                {degenScoreSubmitted && (
-                  <div className="bg-green-900 bg-opacity-50 border-2 border-green-500 p-3 rounded-lg">
-                    <div className="text-green-400 text-sm text-center">
-                      ✅ Score Submitted Successfully!
+                ) : (
+                  <div className="bg-gradient-to-r from-green-900 to-emerald-900 border-2 border-green-500 p-4 rounded-lg">
+                    <div className="text-green-400 text-sm text-center font-bold mb-2">
+                      ✅ Score Submitted!
                     </div>
+                    {potentialReward !== "0" && (
+                      <div className="text-center">
+                        <div className="text-gray-400 text-xs mb-1">Potential Earnings</div>
+                        <div className="text-yellow-300 text-2xl font-bold">{potentialReward} ETH</div>
+                        <div className="text-gray-500 text-xs mt-1">Claimable after period ends</div>
+                      </div>
+                    )}
                   </div>
                 )}
+
+                {/* Tab Navigation */}
+                <div className="flex gap-2 border-b-2 border-gray-700">
+                  <button
+                    onClick={() => setActiveTab("results")}
+                    className={`flex-1 py-2 text-xs font-bold transition-all ${
+                      activeTab === "results"
+                        ? "text-green-400 border-b-2 border-green-400 -mb-[2px]"
+                        : "text-gray-500 hover:text-gray-300"
+                    }`}
+                    style={{ fontFamily: "'Press Start 2P', cursive" }}
+                  >
+                    Results
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("leaderboard")}
+                    className={`flex-1 py-2 text-xs font-bold transition-all ${
+                      activeTab === "leaderboard"
+                        ? "text-green-400 border-b-2 border-green-400 -mb-[2px]"
+                        : "text-gray-500 hover:text-gray-300"
+                    }`}
+                    style={{ fontFamily: "'Press Start 2P', cursive" }}
+                  >
+                    Daily
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("rewards")}
+                    className={`flex-1 py-2 text-xs font-bold transition-all ${
+                      activeTab === "rewards"
+                        ? "text-green-400 border-b-2 border-green-400 -mb-[2px]"
+                        : "text-gray-500 hover:text-gray-300"
+                    }`}
+                    style={{ fontFamily: "'Press Start 2P', cursive" }}
+                  >
+                    {claimableRewards.length > 0 && (
+                      <span className="inline-block w-2 h-2 bg-red-500 rounded-full mr-1 animate-pulse"></span>
+                    )}
+                    Rewards
+                  </button>
+                </div>
+
+                {/* Tab Content */}
+                <div className="min-h-[300px] max-h-[350px] overflow-y-auto">
+                  {activeTab === "results" && (
+                    <div className="space-y-3 p-2">
+                      <div className="bg-gray-800 bg-opacity-70 border border-gray-700 p-4 rounded-lg">
+                        <div className="text-gray-400 text-xs mb-1">Multiplier</div>
+                        <div className="text-white text-2xl font-bold">{calculateMultiplier(finalScore).toFixed(2)}x</div>
+                      </div>
+                      <DailyLeaderboard
+                        currentDay={currentDay}
+                        dayStats={dayStats}
+                        playerRank={playerRank}
+                        loading={loadingStats}
+                        onRefresh={loadDegenData}
+                      />
+                    </div>
+                  )}
+
+                  {activeTab === "leaderboard" && (
+                    <div className="p-2">
+                      <HallOfFame
+                        hallOfFame={hallOfFame}
+                        onRefresh={loadDegenData}
+                      />
+                    </div>
+                  )}
+
+                  {activeTab === "rewards" && (
+                    <div className="p-2">
+                      <ClaimableRewards
+                        claimableRewards={claimableRewards}
+                        lifetimeEarnings={lifetimeEarnings}
+                        claimReward={claimReward}
+                        claimAllRewards={claimAllRewards}
+                        isClaiming={isClaiming}
+                        error={degenError}
+                      />
+                    </div>
+                  )}
+                </div>
 
                 {isSubmittingDegen && (
                   <div className="text-blue-400 text-xs text-center animate-pulse">
@@ -452,7 +525,7 @@ export default function Game() {
                   </div>
                 )}
 
-                {degenError && (
+                {degenError && !isClaiming && (
                   <div className="text-red-400 text-xs text-center bg-red-900 bg-opacity-30 p-2 rounded">
                     ❌ {degenError}
                   </div>
@@ -548,30 +621,6 @@ export default function Game() {
             {selectedMode === "fun" && (
               <div className="w-full flex justify-center">
                 <Leaderboard />
-              </div>
-            )}
-
-            {selectedMode === "degen" && (
-              <div className="w-full space-y-4">
-                <DailyLeaderboard
-                  currentDay={currentDay}
-                  dayStats={dayStats}
-                  playerRank={playerRank}
-                  loading={loadingStats}
-                  onRefresh={loadDegenData}
-                />
-                <ClaimableRewards
-                  claimableRewards={claimableRewards}
-                  lifetimeEarnings={lifetimeEarnings}
-                  claimReward={claimReward}
-                  claimAllRewards={claimAllRewards}
-                  isClaiming={isClaiming}
-                  error={degenError}
-                />
-                <HallOfFame
-                  hallOfFame={hallOfFame}
-                  onRefresh={loadDegenData}
-                />
               </div>
             )}
           </div>
