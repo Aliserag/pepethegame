@@ -240,6 +240,7 @@ export default function Game() {
   const [showAlreadyPlayedModal, setShowAlreadyPlayedModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"results" | "leaderboard" | "rewards">("results");
   const [, setCountdownTick] = useState(0); // Force countdown updates
+  const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
 
   useEffect(() => {
     if (isGameOver) {
@@ -321,7 +322,18 @@ export default function Game() {
 
       {showIntro && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-90 z-50">
-          <div className="text-center p-4 max-w-sm mx-auto space-y-4">
+          <div className="text-center p-4 max-w-sm mx-auto space-y-4 relative">
+            {/* Leaderboard Button - Top Right (DEGEN Mode only) */}
+            {selectedMode === "degen" && (
+              <button
+                onClick={() => setShowLeaderboardModal(true)}
+                className="absolute top-0 right-0 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all"
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
+              >
+                🏆 Today's Leaderboard
+              </button>
+            )}
+
             <h1
               className="text-white text-2xl sm:text-3xl md:text-4xl font-bold mb-2"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
@@ -443,6 +455,44 @@ export default function Game() {
           </div>
         </div>
       )}
+
+      {/* Leaderboard Modal */}
+      {showLeaderboardModal && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-95 z-[60] p-4">
+          <div className="bg-gray-900 border-4 border-green-500 rounded-xl max-w-md w-full max-h-[80vh] overflow-y-auto p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2
+                className="text-green-400 text-lg font-bold"
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
+              >
+                Today's Leaderboard
+              </h2>
+              <button
+                onClick={() => setShowLeaderboardModal(false)}
+                className="text-gray-400 hover:text-white text-2xl font-bold leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            <DegenLeaderboard
+              leaderboard={leaderboard}
+              userAddress={address}
+              playerRank={playerRank}
+              userReward={potentialReward}
+            />
+
+            <button
+              onClick={() => setShowLeaderboardModal(false)}
+              className="mt-4 w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm"
+              style={{ fontFamily: "'Press Start 2P', cursive" }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {showGameOver && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-95 p-4 z-50 overflow-y-auto">
           <div className="max-w-md w-full space-y-6 flex flex-col items-center">
