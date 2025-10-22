@@ -393,42 +393,75 @@ export default function useDegenMode() {
     setIsSubmitting(true);
     setError(null);
 
-    try {
-      const hash = await walletClient.writeContract({
-        address: contractAddress,
-        abi: degenAbi,
-        functionName: "submitScore",
-        args: [BigInt(score)],
-        chain: baseSepolia,
-      });
+    // Retry logic with exponential backoff
+    const maxRetries = 3;
+    let retryCount = 0;
 
-      console.log("Score submission transaction sent:", hash);
-
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
-
-      if (receipt.status === "success") {
-        // Calculate potential reward
-        const reward = await publicClient.readContract({
+    while (retryCount <= maxRetries) {
+      try {
+        const hash = await walletClient.writeContract({
           address: contractAddress,
           abi: degenAbi,
-          functionName: "calculateReward",
-          args: [address, BigInt(currentDay)],
-        }) as bigint;
-        setPotentialReward(formatEther(reward));
+          functionName: "submitScore",
+          args: [BigInt(score)],
+          chain: baseSepolia,
+        });
 
-        setIsSubmitting(false);
-        return true;
-      } else {
-        setError("Score submission failed");
+        console.log("Score submission transaction sent:", hash);
+
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+        if (receipt.status === "success") {
+          // Calculate potential reward
+          const reward = await publicClient.readContract({
+            address: contractAddress,
+            abi: degenAbi,
+            functionName: "calculateReward",
+            args: [address, BigInt(currentDay)],
+          }) as bigint;
+          setPotentialReward(formatEther(reward));
+
+          setIsSubmitting(false);
+          return true;
+        } else {
+          setError("Score submission failed");
+          setIsSubmitting(false);
+          return false;
+        }
+      } catch (err: any) {
+        console.error(`Error submitting score (attempt ${retryCount + 1}/${maxRetries + 1}):`, err);
+
+        // Check if it's a rate limit error
+        if (err.message?.includes("rate limit")) {
+          retryCount++;
+          if (retryCount <= maxRetries) {
+            const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s, 8s
+            console.log(`Rate limited. Retrying in ${waitTime/1000}s...`);
+            setError(`Rate limited. Retrying in ${waitTime/1000}s... (Attempt ${retryCount}/${maxRetries + 1})`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue; // Retry
+          } else {
+            setError("RPC rate limit reached after multiple attempts. Please wait 30 seconds and try again.");
+            setIsSubmitting(false);
+            return false;
+          }
+        }
+
+        // Other errors - don't retry
+        if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
+          setError("Transaction cancelled");
+        } else if (err.message?.includes("insufficient funds")) {
+          setError("Insufficient gas");
+        } else {
+          setError(`Failed to submit score: ${err.message || "Unknown error"}`);
+        }
         setIsSubmitting(false);
         return false;
       }
-    } catch (err: any) {
-      console.error("Error submitting score:", err);
-      setError("Failed to submit score");
-      setIsSubmitting(false);
-      return false;
     }
+
+    setIsSubmitting(false);
+    return false;
   }, [walletClient, address, publicClient, contractAddress, hasEntered, currentDay]);
 
   /**
