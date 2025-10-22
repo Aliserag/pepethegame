@@ -95,6 +95,9 @@ contract FlowPepeDegen is Ownable, ReentrancyGuard {
             _rolloverDay();
         }
 
+        // Check if this is player's first entry today
+        bool isFirstEntry = !hasPlayed[day][msg.sender];
+
         // No daily restriction - players can play unlimited times
         // Mark as played for this entry
         hasPlayed[day][msg.sender] = true;
@@ -106,7 +109,11 @@ contract FlowPepeDegen is Ownable, ReentrancyGuard {
         // Update stats
         creatorFees += creatorFee;
         dayStats[day].totalPool += poolAmount;
-        dayStats[day].totalPlayers++;
+
+        // Only increment totalPlayers for first entry
+        if (isFirstEntry) {
+            dayStats[day].totalPlayers++;
+        }
 
         emit GamePlayed(msg.sender, day, 0, 100); // Initial emit, score submitted later
     }
