@@ -87,6 +87,46 @@ const degenAbi = [
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "uint256", "name": "limit", "type": "uint256"}],
+    "name": "getTopEarners",
+    "outputs": [
+      {"internalType": "address[]", "name": "addresses", "type": "address[]"},
+      {"internalType": "uint256[]", "name": "earnings", "type": "uint256[]"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "player", "type": "address"},
+      {"internalType": "uint256", "name": "day", "type": "uint256"}
+    ],
+    "name": "getPlayerRank",
+    "outputs": [
+      {"internalType": "uint256", "name": "rank", "type": "uint256"},
+      {"internalType": "uint256", "name": "totalPlayers", "type": "uint256"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "player", "type": "address"}],
+    "name": "getClaimableRewards",
+    "outputs": [
+      {"internalType": "uint256[]", "name": "", "type": "uint256[]"},
+      {"internalType": "uint256[]", "name": "", "type": "uint256[]"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+    "name": "lifetimeEarnings",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
   }
 ] as const;
 
@@ -106,6 +146,9 @@ export default function useDegenMode() {
   const [entryFee, setEntryFee] = useState("0.002");
   const [potentialReward, setPotentialReward] = useState("0");
   const [currentDay, setCurrentDay] = useState(0);
+  const [hallOfFame, setHallOfFame] = useState<{ address: string; earnings: string }[]>([]);
+  const [lifetimeEarnings, setLifetimeEarnings] = useState("0");
+  const [claimableRewards, setClaimableRewards] = useState<{ day: number; amount: string }[]>([]);
 
   // Contract address - will be set after deployment
   const contractAddress = (process.env.NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000") as `0x${string}`;
@@ -151,6 +194,43 @@ export default function useDegenMode() {
         args: [address],
       }) as boolean;
       setHasPlayed(played);
+
+      // Get Hall of Fame (top 10)
+      const [addresses, earnings] = await publicClient.readContract({
+        address: contractAddress,
+        abi: degenAbi,
+        functionName: "getTopEarners",
+        args: [BigInt(10)],
+      }) as [readonly `0x${string}`[], readonly bigint[]];
+
+      const hallOfFameData = addresses.map((addr, i) => ({
+        address: addr,
+        earnings: formatEther(earnings[i]),
+      }));
+      setHallOfFame(hallOfFameData);
+
+      // Get user's lifetime earnings
+      const userEarnings = await publicClient.readContract({
+        address: contractAddress,
+        abi: degenAbi,
+        functionName: "lifetimeEarnings",
+        args: [address],
+      }) as bigint;
+      setLifetimeEarnings(formatEther(userEarnings));
+
+      // Get claimable rewards
+      const [claimableDays, claimableAmounts] = await publicClient.readContract({
+        address: contractAddress,
+        abi: degenAbi,
+        functionName: "getClaimableRewards",
+        args: [address],
+      }) as [readonly bigint[], readonly bigint[]];
+
+      const claimableData = claimableDays.map((dayNum, i) => ({
+        day: Number(dayNum),
+        amount: formatEther(claimableAmounts[i]),
+      }));
+      setClaimableRewards(claimableData);
 
     } catch (err) {
       console.error("Error loading DEGEN data:", err);
@@ -352,6 +432,80 @@ export default function useDegenMode() {
     return finalReward.toFixed(4);
   }, [calculateMultiplier]);
 
+  /**
+   * Get player's rank for a specific day
+   */
+  const getPlayerRank = useCallback(async (day: number): Promise<{ rank: number; totalPlayers: number } | null> => {
+    if (!publicClient || !address) return null;
+
+    try {
+      const [rank, totalPlayers] = await publicClient.readContract({
+        address: contractAddress,
+        abi: degenAbi,
+        functionName: "getPlayerRank",
+        args: [address, BigInt(day)],
+      }) as [bigint, bigint];
+
+      return {
+        rank: Number(rank),
+        totalPlayers: Number(totalPlayers),
+      };
+    } catch (err) {
+      console.error("Error getting player rank:", err);
+      return null;
+    }
+  }, [publicClient, address, contractAddress]);
+
+  /**
+   * Claim all available rewards
+   */
+  const claimAllRewards = useCallback(async (): Promise<boolean> => {
+    if (!walletClient || !address || !publicClient) {
+      setError("Wallet not connected");
+      return false;
+    }
+
+    if (claimableRewards.length === 0) {
+      setError("No rewards to claim");
+      return false;
+    }
+
+    setIsClaiming(true);
+    setError(null);
+
+    try {
+      // Claim each day sequentially
+      for (const { day } of claimableRewards) {
+        const hash = await walletClient.writeContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "claimReward",
+          args: [BigInt(day)],
+          chain: baseSepolia,
+        });
+
+        console.log(`Claim transaction for day ${day} sent:`, hash);
+
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+        if (receipt.status !== "success") {
+          setError(`Failed to claim reward for day ${day}`);
+          setIsClaiming(false);
+          return false;
+        }
+      }
+
+      await loadData();
+      setIsClaiming(false);
+      return true;
+    } catch (err: any) {
+      console.error("Error claiming all rewards:", err);
+      setError("Failed to claim all rewards");
+      setIsClaiming(false);
+      return false;
+    }
+  }, [walletClient, address, publicClient, contractAddress, claimableRewards, loadData]);
+
   return {
     // State
     hasPlayed,
@@ -360,6 +514,9 @@ export default function useDegenMode() {
     entryFee,
     potentialReward,
     currentDay,
+    hallOfFame,
+    lifetimeEarnings,
+    claimableRewards,
     isEntering,
     isSubmitting,
     isClaiming,
@@ -369,6 +526,8 @@ export default function useDegenMode() {
     enterGame,
     submitScore,
     claimReward,
+    claimAllRewards,
+    getPlayerRank,
     calculateMultiplier,
     calculatePotentialEarnings,
     loadData,
