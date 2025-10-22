@@ -348,6 +348,17 @@ export default function useDegenMode() {
           reward: formatEther(rewards[i]),
         }));
         setLeaderboard(leaderboardData);
+
+        // Also update playerCurrentDayScore and potentialReward from leaderboard if we find the user
+        const userEntry = leaderboardData.find(
+          entry => entry.address.toLowerCase() === address.toLowerCase()
+        );
+        if (userEntry) {
+          console.log("Setting playerCurrentDayScore from leaderboard:", userEntry.score);
+          console.log("Setting potentialReward from leaderboard:", userEntry.reward);
+          setPlayerCurrentDayScore(userEntry.score);
+          setPotentialReward(userEntry.reward);
+        }
       } catch (leaderboardErr) {
         console.error("Error loading leaderboard:", leaderboardErr);
         setLeaderboard([]);
