@@ -147,6 +147,17 @@ export default function Game() {
   const [currentOnChainScore, setCurrentOnChainScore] = useState(0);
   const [isNewHighScore, setIsNewHighScore] = useState(false);
 
+  // Fetch user's on-chain score when connected (for intro screen display)
+  useEffect(() => {
+    const fetchUserScore = async () => {
+      if (isConnected && selectedMode === "fun") {
+        const onChainScore = await getOnChainScore();
+        setCurrentOnChainScore(onChainScore);
+      }
+    };
+    fetchUserScore();
+  }, [isConnected, selectedMode, getOnChainScore]);
+
   // Check if this is a new high score when game ends
   useEffect(() => {
     const checkHighScore = async () => {
@@ -425,7 +436,13 @@ export default function Game() {
                 className="mt-4 text-white text-sm"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
-                Top Score: {topScore}
+                {isConnected && currentOnChainScore > 0 ? (
+                  <>Your Best: {currentOnChainScore}</>
+                ) : isConnected ? (
+                  <>Your Best: 0</>
+                ) : (
+                  <>Local Best: {topScore}</>
+                )}
               </div>
             )}
 
@@ -799,6 +816,39 @@ export default function Game() {
               <div className="w-full flex justify-center">
                 <Leaderboard />
               </div>
+            )}
+
+            {/* Home Button - Navigate back to mode selection */}
+            {selectedMode === "degen" && (
+              <button
+                onClick={() => {
+                  setShowGameOver(false);
+                  setShowModeSelection(true);
+                  setSelectedMode(null);
+                  resetGame();
+                  resetEntry();
+                }}
+                className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm"
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
+              >
+                🏠 Home
+              </button>
+            )}
+
+            {/* Home Button for Fun Mode */}
+            {selectedMode === "fun" && (
+              <button
+                onClick={() => {
+                  setShowGameOver(false);
+                  setShowModeSelection(true);
+                  setSelectedMode(null);
+                  resetGame();
+                }}
+                className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm"
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
+              >
+                🏠 Home
+              </button>
             )}
           </div>
         </div>
