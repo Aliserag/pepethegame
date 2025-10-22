@@ -18,6 +18,7 @@ import useDegenMode from "../hooks/useDegenMode";
 import HallOfFame from "./HallOfFame";
 import DailyLeaderboard from "./DailyLeaderboard";
 import ClaimableRewards from "./ClaimableRewards";
+import PayoutBreakdown from "./PayoutBreakdown";
 
 export default function Game() {
   const { user } = useFarcaster();
@@ -540,56 +541,29 @@ export default function Game() {
                         </div>
                       )}
 
-                      {/* Today's Competition */}
-                      <div className="bg-gray-900 border-2 border-gray-700 p-4 rounded-lg">
-                        <h3 className="text-green-400 text-sm font-bold mb-3 text-center"
-                            style={{ fontFamily: "'Press Start 2P', cursive" }}>
-                          📊 Today's Competition
-                        </h3>
+                      {/* Payout Breakdown */}
+                      <PayoutBreakdown
+                        dayStats={dayStats ? {
+                          highScore: dayStats.highScore,
+                          totalPool: dayStats.totalPool,
+                        } : null}
+                        playerScore={finalScore}
+                        multiplier={calculateMultiplier(finalScore)}
+                        minScoreThreshold={dayStats ? Math.floor(dayStats.highScore * 0.8) : 0}
+                      />
 
-                        <div className="space-y-3">
-                          {/* Prize Pool */}
-                          <div className="flex justify-between items-center pb-2 border-b border-gray-700">
-                            <span className="text-gray-400 text-xs">Prize Pool</span>
-                            <span className="text-green-400 text-sm font-bold"
-                                  style={{ fontFamily: "'Press Start 2P', cursive" }}>
-                              {dayStats?.totalPool || "0"} ETH
-                            </span>
-                          </div>
-
-                          {/* High Score */}
-                          {dayStats && dayStats.highScore > 0 && (
-                            <div className="flex justify-between items-center pb-2 border-b border-gray-700">
-                              <span className="text-gray-400 text-xs">High Score</span>
-                              <span className="text-yellow-300 text-sm font-bold"
-                                    style={{ fontFamily: "'Press Start 2P', cursive" }}>
-                                {dayStats.highScore}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Your Rank */}
-                          {playerRank && playerRank.rank > 0 && (
-                            <div className="bg-green-900 bg-opacity-30 p-3 rounded border border-green-700">
-                              <div className="flex justify-between items-center">
-                                <span className="text-green-300 text-xs">Your Rank</span>
-                                <span className="text-green-300 text-base font-bold"
-                                      style={{ fontFamily: "'Press Start 2P', cursive" }}>
-                                  #{playerRank.rank} / {playerRank.totalPlayers}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Total Players */}
+                      {/* Your Rank */}
+                      {playerRank && playerRank.rank > 0 && (
+                        <div className="bg-green-900 bg-opacity-30 p-3 rounded-lg border-2 border-green-700">
                           <div className="flex justify-between items-center">
-                            <span className="text-gray-400 text-xs">Total Players</span>
-                            <span className="text-white text-sm font-bold">
-                              {dayStats?.totalPlayers || 0}
+                            <span className="text-green-300 text-xs">Your Rank</span>
+                            <span className="text-green-300 text-base font-bold"
+                                  style={{ fontFamily: "'Press Start 2P', cursive" }}>
+                              #{playerRank.rank} / {playerRank.totalPlayers}
                             </span>
                           </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   )}
 
