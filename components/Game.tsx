@@ -248,7 +248,7 @@ export default function Game() {
         saveScore(lastGameScore);
         setFinalScore(lastGameScore);
         setScoreSubmitted(false);
-        setDegenScoreSubmitted(false); // Reset DEGEN submission state
+        // Don't reset degenScoreSubmitted here - only reset when starting new game
 
         // For DEGEN mode, reload data to get latest player score
         if (selectedMode === "degen") {
