@@ -588,7 +588,7 @@ export default function Game() {
                   userReward={potentialReward}
                 />
               ) : (
-                <HallOfFame hallOfFame={hallOfFame} userAddress={address} />
+                <HallOfFame hallOfFame={hallOfFame} />
               )}
             </div>
 

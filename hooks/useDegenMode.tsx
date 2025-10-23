@@ -403,21 +403,12 @@ export default function useDegenMode() {
     setProcessingMessage("Preparing transaction...");
 
     try {
-      // 1. Check account status - wait if reconnecting
-      if (status === 'reconnecting') {
-        setProcessingMessage("Waiting for wallet connection...");
-        let attempts = 0;
-        while (status === 'reconnecting' && attempts < 50) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          attempts++;
-        }
-
-        if (status !== 'connected') {
-          setError("Wallet connection not ready. Please try again.");
-          setIsEntering(false);
-          setProcessingMessage(null);
-          return false;
-        }
+      // 1. Check account status
+      if (!isConnected || !address) {
+        setError("Wallet not connected. Please connect your wallet.");
+        setIsEntering(false);
+        setProcessingMessage(null);
+        return false;
       }
 
       // 2. Check if we need to switch chains

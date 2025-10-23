@@ -19,28 +19,33 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        {/* Suppress browser extension errors immediately */}
+        {/* Suppress browser extension errors early - must run before any other scripts */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              // Suppress extension errors before React loads
               (function() {
+                // Suppress console errors from browser extensions
                 const originalError = console.error;
                 console.error = function(...args) {
-                  const msg = args[0]?.toString() || '';
-                  if (msg.includes('Could not establish connection') ||
-                      msg.includes('Receiving end does not exist') ||
-                      msg.includes('runtime.lastError')) {
-                    return;
+                  const errorMsg = args[0]?.toString() || '';
+                  if (
+                    errorMsg.includes('Could not establish connection') ||
+                    errorMsg.includes('Receiving end does not exist') ||
+                    errorMsg.includes('runtime.lastError')
+                  ) {
+                    return; // Silently ignore extension errors
                   }
                   originalError.apply(console, args);
                 };
 
-                window.addEventListener('unhandledrejection', function(e) {
-                  const reason = e.reason?.toString() || '';
-                  if (reason.includes('Could not establish connection') ||
-                      reason.includes('Receiving end does not exist')) {
-                    e.preventDefault();
+                // Suppress unhandled promise rejections from extensions
+                window.addEventListener('unhandledrejection', function(event) {
+                  const reason = event.reason?.toString() || '';
+                  if (
+                    reason.includes('Could not establish connection') ||
+                    reason.includes('Receiving end does not exist')
+                  ) {
+                    event.preventDefault();
                   }
                 });
               })();
