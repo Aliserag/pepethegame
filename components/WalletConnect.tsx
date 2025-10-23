@@ -24,15 +24,22 @@ const WalletConnect: React.FC = () => {
   // Debug logging
   useEffect(() => {
     console.log("=== WalletConnect Debug ===");
-    console.log("Available connectors:", filteredConnectors.map(c => ({ id: c.id, name: c.name })));
+    console.log("Available connectors:", filteredConnectors.map(c => ({ id: c.id, name: c.name, type: c.type })));
+    console.log("All connector IDs:", filteredConnectors.map(c => c.id));
     console.log("Is connected:", isConnected);
     console.log("Address:", address);
     console.log("Connect error:", error);
   }, [filteredConnectors, isConnected, address, error]);
 
+  // Try to find Farcaster connector by multiple possible IDs
   const farcasterConnector = filteredConnectors.find(
-    (connector) => connector.id === "farcasterMiniApp"
+    (connector) =>
+      connector.id === "farcasterMiniApp" ||
+      connector.id === "farcaster" ||
+      connector.name?.toLowerCase().includes("farcaster")
   );
+
+  console.log("Found Farcaster connector:", farcasterConnector ? { id: farcasterConnector.id, name: farcasterConnector.name } : "NONE");
 
   // Auto-connect to Farcaster wallet if in Farcaster Mini App
   useEffect(() => {
