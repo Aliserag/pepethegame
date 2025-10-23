@@ -8,39 +8,38 @@ interface ModeSelectionProps {
 
 const ModeSelection: React.FC<ModeSelectionProps> = ({ onSelectMode }) => {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-95 z-50">
-      <div className="text-center p-6 max-w-2xl mx-auto">
+    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-95 z-50 overflow-y-auto">
+      <div className="text-center p-3 sm:p-6 max-w-2xl mx-auto w-full">
         <h1
-          className="text-white text-3xl sm:text-4xl md:text-5xl font-bold mb-4"
+          className="text-white text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4"
           style={{ fontFamily: "'Press Start 2P', cursive" }}
         >
-          Choose Your Mode
+          Choose Mode
         </h1>
 
-        <div className="grid md:grid-cols-2 gap-6 mt-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 mt-4 sm:mt-8">
           {/* Fun Mode Card */}
           <div
             onClick={() => onSelectMode("fun")}
-            className="bg-gradient-to-br from-blue-900 to-blue-700 p-6 rounded-xl border-4 border-blue-500 cursor-pointer hover:scale-105 transition-transform shadow-2xl"
+            className="bg-gradient-to-br from-blue-900 to-blue-700 p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 sm:border-4 border-blue-500 cursor-pointer hover:scale-105 transition-transform shadow-2xl"
           >
-            <div className="text-4xl mb-4">🎮</div>
+            <div className="text-2xl sm:text-3xl mb-2">🎮</div>
             <h2
-              className="text-white text-2xl font-bold mb-3"
+              className="text-white text-base sm:text-xl font-bold mb-2"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
               Fun Mode
             </h2>
-            <p className="text-blue-200 text-sm mb-4">
-              Play for free, compete on the leaderboard, and have fun!
+            <p className="text-blue-200 text-xs sm:text-sm mb-2 sm:mb-3">
+              Free play, compete on leaderboard!
             </p>
-            <ul className="text-left text-blue-100 text-xs space-y-2 mb-6">
+            <ul className="text-left text-blue-100 text-xs space-y-1 mb-3 sm:mb-4">
               <li>✓ Unlimited plays</li>
               <li>✓ Free to play</li>
-              <li>✓ Compete for top score</li>
-              <li>✓ Normal speed progression</li>
+              <li>✓ Top score</li>
             </ul>
             <div
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-sm text-center"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 sm:py-3 sm:px-6 rounded-lg text-xs sm:text-sm text-center"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
               Play Free
@@ -50,30 +49,28 @@ const ModeSelection: React.FC<ModeSelectionProps> = ({ onSelectMode }) => {
           {/* DEGEN Mode Card */}
           <div
             onClick={() => onSelectMode("degen")}
-            className="bg-gradient-to-br from-green-900 to-emerald-700 p-6 rounded-xl border-4 border-green-500 cursor-pointer hover:scale-105 transition-transform shadow-2xl relative overflow-hidden"
+            className="bg-gradient-to-br from-green-900 to-emerald-700 p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 sm:border-4 border-green-500 cursor-pointer hover:scale-105 transition-transform shadow-2xl relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 bg-yellow-500 text-black px-3 py-1 text-xs font-bold rotate-12 transform translate-x-2 -translate-y-2">
-              EARN $$$
+            <div className="absolute top-0 right-0 bg-yellow-500 text-black px-2 py-0.5 text-[10px] sm:text-xs font-bold rotate-12 transform translate-x-1 -translate-y-1">
+              EARN $
             </div>
-            <div className="text-4xl mb-4">💰</div>
+            <div className="text-2xl sm:text-3xl mb-2">💰</div>
             <h2
-              className="text-white text-2xl font-bold mb-3"
+              className="text-white text-base sm:text-xl font-bold mb-2"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
               DEGEN Mode
             </h2>
-            <p className="text-green-200 text-sm mb-4">
-              Play to earn! $5 entry, win from the prize pool!
+            <p className="text-green-200 text-xs sm:text-sm mb-2 sm:mb-3">
+              Play to earn! $5 entry, prize pool!
             </p>
-            <ul className="text-left text-green-100 text-xs space-y-2 mb-6">
-              <li>✓ $5 entry fee per play</li>
-              <li>✓ Win from prize pool</li>
-              <li>✓ Exponential multipliers</li>
-              <li>✓ 2x faster speed</li>
-              <li>✓ Higher scores = more $</li>
+            <ul className="text-left text-green-100 text-xs space-y-1 mb-3 sm:mb-4">
+              <li>✓ $5 entry/play</li>
+              <li>✓ Win from pool</li>
+              <li>✓ Exp. multipliers</li>
             </ul>
             <div
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-sm text-center animate-pulse"
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 sm:py-3 sm:px-6 rounded-lg text-xs sm:text-sm text-center animate-pulse"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
               Play for $$$
@@ -81,13 +78,9 @@ const ModeSelection: React.FC<ModeSelectionProps> = ({ onSelectMode }) => {
           </div>
         </div>
 
-        <div className="mt-8 text-gray-400 text-xs max-w-md mx-auto">
-          <p className="mb-2">
-            💡 <strong>DEGEN Mode:</strong> Fair play-to-earn with unlimited plays
-          </p>
+        <div className="mt-3 sm:mt-6 text-gray-400 text-[10px] sm:text-xs max-w-md mx-auto px-2">
           <p>
-            The farther you go and the faster your speed, the more you can earn
-            from the prize pool!
+            💡 Higher scores + faster speed = more earnings!
           </p>
         </div>
       </div>

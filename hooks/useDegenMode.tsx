@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import { useAccount, usePublicClient, useWalletClient, useSwitchChain } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 import { parseEther, formatEther } from "viem";
 
@@ -146,9 +146,10 @@ const degenAbi = [
 ] as const;
 
 export default function useDegenMode() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chain } = useAccount();
   const publicClient = usePublicClient({ chainId: baseSepolia.id });
   const { data: walletClient } = useWalletClient();
+  const { switchChainAsync } = useSwitchChain();
 
   const [isEntering, setIsEntering] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -397,6 +398,26 @@ export default function useDegenMode() {
     setError(null);
     setProcessingMessage("Preparing transaction...");
 
+    // Check if we need to switch chains
+    if (chain?.id !== baseSepolia.id) {
+      try {
+        setProcessingMessage("Switching to Base Sepolia network...");
+        console.log(`Current chain: ${chain?.id}, switching to Base Sepolia (${baseSepolia.id})`);
+        await switchChainAsync({ chainId: baseSepolia.id });
+        setProcessingMessage("Network switched. Preparing transaction...");
+      } catch (switchErr: any) {
+        console.error("Error switching chain:", switchErr);
+        if (switchErr.message?.includes("rejected") || switchErr.message?.includes("User rejected")) {
+          setError("Network switch cancelled");
+        } else {
+          setError("Failed to switch to Base Sepolia network. Please switch manually.");
+        }
+        setIsEntering(false);
+        setProcessingMessage(null);
+        return false;
+      }
+    }
+
     // Retry logic with exponential backoff
     const maxRetries = 3;
     let retryCount = 0;
@@ -479,7 +500,7 @@ export default function useDegenMode() {
 
     setIsEntering(false);
     return false;
-  }, [walletClient, address, publicClient, contractAddress, entryFee, loadData]);
+  }, [walletClient, address, publicClient, contractAddress, entryFee, loadData, chain, switchChainAsync]);
 
   /**
    * Submit score after game ends

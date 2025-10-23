@@ -252,6 +252,7 @@ export default function Game() {
   const [activeTab, setActiveTab] = useState<"results" | "leaderboard" | "rewards">("results");
   const [, setCountdownTick] = useState(0); // Force countdown updates
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
+  const [leaderboardTab, setLeaderboardTab] = useState<"daily" | "alltime">("daily");
 
   useEffect(() => {
     if (isGameOver) {
@@ -368,6 +369,27 @@ export default function Game() {
                   <div className="text-yellow-300 text-xs mb-1">Entry Fee</div>
                   <div className="text-white text-xl font-bold">{entryFee} ETH</div>
                 </div>
+
+                {/* Claimable Rewards Indicator */}
+                {isWalletConnected && claimableRewards.length > 0 && (
+                  <div className="bg-gradient-to-r from-yellow-600 to-amber-600 border-2 border-yellow-400 p-3 rounded-lg relative overflow-hidden animate-pulse">
+                    <div className="absolute top-0 right-0 text-4xl opacity-20">💰</div>
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <span className="text-2xl">🏆</span>
+                        <div className="text-yellow-100 text-xs font-bold">REWARDS AVAILABLE!</div>
+                        <span className="text-2xl">🏆</span>
+                      </div>
+                      <div className="text-white text-lg font-bold text-center">
+                        {claimableRewards.reduce((sum, r) => sum + parseFloat(r.amount), 0).toFixed(4)} ETH
+                      </div>
+                      <div className="text-yellow-200 text-[10px] text-center mt-1">
+                        {claimableRewards.length} reward{claimableRewards.length > 1 ? 's' : ''} ready to claim
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {degenError && (
                   <div className="text-red-400 text-xs">{degenError}</div>
                 )}
@@ -480,13 +502,13 @@ export default function Game() {
       {/* Leaderboard Modal */}
       {showLeaderboardModal && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-95 z-[60] p-4">
-          <div className="bg-gray-900 border-4 border-green-500 rounded-xl max-w-md w-full max-h-[80vh] overflow-y-auto p-4">
+          <div className="bg-gray-900 border-4 border-green-500 rounded-xl max-w-md w-full max-h-[80vh] flex flex-col p-4">
             <div className="flex justify-between items-center mb-4">
               <h2
-                className="text-green-400 text-lg font-bold"
+                className="text-green-400 text-base sm:text-lg font-bold"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
-                Today's Leaderboard
+                Leaderboards
               </h2>
               <button
                 onClick={() => setShowLeaderboardModal(false)}
@@ -496,12 +518,45 @@ export default function Game() {
               </button>
             </div>
 
-            <DegenLeaderboard
-              leaderboard={leaderboard}
-              userAddress={address}
-              playerRank={playerRank}
-              userReward={potentialReward}
-            />
+            {/* Tab Navigation */}
+            <div className="flex gap-2 border-b-2 border-gray-700 mb-4">
+              <button
+                onClick={() => setLeaderboardTab("daily")}
+                className={`flex-1 py-2 text-xs font-bold transition-all ${
+                  leaderboardTab === "daily"
+                    ? "text-green-400 border-b-2 border-green-400 -mb-[2px]"
+                    : "text-gray-500 hover:text-gray-300"
+                }`}
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
+              >
+                Today
+              </button>
+              <button
+                onClick={() => setLeaderboardTab("alltime")}
+                className={`flex-1 py-2 text-xs font-bold transition-all ${
+                  leaderboardTab === "alltime"
+                    ? "text-yellow-400 border-b-2 border-yellow-400 -mb-[2px]"
+                    : "text-gray-500 hover:text-gray-300"
+                }`}
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
+              >
+                🏆 All-Time
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            <div className="overflow-y-auto flex-1">
+              {leaderboardTab === "daily" ? (
+                <DegenLeaderboard
+                  leaderboard={leaderboard}
+                  userAddress={address}
+                  playerRank={playerRank}
+                  userReward={potentialReward}
+                />
+              ) : (
+                <HallOfFame hallOfFame={hallOfFame} userAddress={address} />
+              )}
+            </div>
 
             <button
               onClick={() => setShowLeaderboardModal(false)}
@@ -515,17 +570,17 @@ export default function Game() {
       )}
 
       {showGameOver && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-95 p-4 z-50 overflow-y-auto">
-          <div className="max-w-md w-full space-y-6 flex flex-col items-center">
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-95 p-2 sm:p-4 z-50 overflow-y-auto">
+          <div className="max-w-md w-full space-y-3 sm:space-y-6 flex flex-col items-center">
             <h1
-              className="text-white text-4xl md:text-5xl font-bold text-center"
+              className="text-white text-2xl sm:text-3xl md:text-4xl font-bold text-center"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
               Game Over!
             </h1>
 
             <div
-              className={`text-2xl md:text-3xl text-center ${selectedMode === "degen" ? "text-green-400" : "text-yellow-400"}`}
+              className={`text-xl sm:text-2xl md:text-3xl text-center ${selectedMode === "degen" ? "text-green-400" : "text-yellow-400"}`}
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
               Score: {finalScore}
@@ -534,7 +589,7 @@ export default function Game() {
             {/* DEGEN Mode: Show if new high score for the day */}
             {selectedMode === "degen" && finalScore > playerCurrentDayScore && finalScore > 0 && (
               <div
-                className="text-yellow-400 text-lg text-center animate-pulse"
+                className="text-yellow-400 text-sm sm:text-base text-center animate-pulse"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
                 🎉 New Daily Best! 🎉
@@ -543,7 +598,7 @@ export default function Game() {
 
             {/* DEGEN Mode specific info */}
             {selectedMode === "degen" && (
-              <div className="w-full space-y-4">
+              <div className="w-full space-y-2 sm:space-y-3">
                 {/* Show warning if score is lower than current best */}
                 {finalScore > 0 && finalScore <= playerCurrentDayScore && !degenScoreSubmitted && (
                   <div className="bg-yellow-900 bg-opacity-30 border-2 border-yellow-600 p-3 rounded-lg">
@@ -732,7 +787,7 @@ export default function Game() {
             {/* Show if it's a new high score (Fun Mode only) */}
             {selectedMode === "fun" && isConnected && isNewHighScore && !scoreSubmitted && (
               <div
-                className="text-green-400 text-lg text-center animate-pulse"
+                className="text-green-400 text-sm sm:text-base text-center animate-pulse"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
                 🎉 New High Score! 🎉
@@ -742,7 +797,7 @@ export default function Game() {
             {/* Current on-chain record (Fun Mode only) */}
             {selectedMode === "fun" && isConnected && currentOnChainScore > 0 && (
               <div
-                className="text-gray-400 text-sm text-center"
+                className="text-gray-400 text-xs sm:text-sm text-center"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
                 Your Record: {currentOnChainScore}
@@ -751,7 +806,7 @@ export default function Game() {
 
             <button
               onClick={handleTryAgainClick}
-              className="bg-red-700 hover:bg-red-900 text-white font-bold py-3 px-6 rounded-lg text-xl md:text-2xl"
+              className="bg-red-700 hover:bg-red-900 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-lg text-base sm:text-lg md:text-xl"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
               Try Again
@@ -761,23 +816,23 @@ export default function Game() {
             {selectedMode === "fun" && !isConnected && (
               <button
                 onClick={handleConnectWallet}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-sm w-full max-w-md"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 sm:py-3 sm:px-6 rounded-lg text-xs sm:text-sm w-full max-w-md"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
-                Connect Wallet to Submit Score 🏆
+                Connect to Submit 🏆
               </button>
             )}
 
             {selectedMode === "fun" && isConnected && finalScore > 0 && (
-              <div className="w-full flex flex-col items-center space-y-3">
+              <div className="w-full flex flex-col items-center space-y-2 sm:space-y-3">
                 {!scoreSubmitted ? (
                   <>
                     {isNewHighScore && (
                       <div
-                        className="text-white text-sm text-center"
+                        className="text-white text-[10px] sm:text-xs text-center"
                         style={{ fontFamily: "'Press Start 2P', cursive" }}
                       >
-                        Save your new record to the blockchain!
+                        Save to blockchain!
                       </div>
                     )}
                     <button
@@ -787,14 +842,14 @@ export default function Game() {
                         isSubmitting || !isNewHighScore
                           ? "bg-gray-600"
                           : "bg-green-600 hover:bg-green-700"
-                      } text-white font-bold py-3 px-6 rounded-lg text-sm md:text-base w-full max-w-md`}
+                      } text-white font-bold py-2 px-3 sm:py-3 sm:px-6 rounded-lg text-xs sm:text-sm w-full max-w-md`}
                       style={{ fontFamily: "'Press Start 2P', cursive" }}
                     >
                       {isSubmitting
                         ? "Submitting..."
                         : isNewHighScore
                         ? "Submit to Leaderboard 🏆"
-                        : "Score not higher than record"}
+                        : "Not higher than record"}
                     </button>
                   </>
                 ) : (
