@@ -646,14 +646,20 @@ export default function useDegenMode() {
         });
 
         console.log("Claim transaction sent:", hash);
+        console.log("🔗 View on block explorer: https://sepolia.basescan.org/tx/" + hash);
 
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
+        console.log("Transaction receipt:", receipt);
 
         if (receipt.status === "success") {
+          console.log("✅ Claim successful! Transaction:", hash);
+          console.log("Gas used:", receipt.gasUsed.toString());
+          console.log("Block number:", receipt.blockNumber.toString());
           await loadData();
           setIsClaiming(false);
           return true;
         } else {
+          console.error("❌ Claim transaction failed. Receipt:", receipt);
           setError("Claim transaction failed");
           setIsClaiming(false);
           return false;
@@ -808,12 +814,16 @@ export default function useDegenMode() {
             });
 
             console.log(`Claim transaction for day ${day} sent:`, hash);
+            console.log(`🔗 View on block explorer: https://sepolia.basescan.org/tx/${hash}`);
 
             const receipt = await publicClient.waitForTransactionReceipt({ hash });
+            console.log(`Transaction receipt for day ${day}:`, receipt);
 
             if (receipt.status === "success") {
+              console.log(`✅ Claim successful for day ${day}! Transaction:`, hash);
               claimed = true;
             } else {
+              console.error(`❌ Claim failed for day ${day}. Receipt:`, receipt);
               setError(`Failed to claim reward for day ${day}`);
               setIsClaiming(false);
               return false;
