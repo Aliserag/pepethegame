@@ -88,9 +88,21 @@ function createInjectedConnector() {
       const provider = (window as any).ethereum
       if (!provider) return
 
-      provider.on('accountsChanged', this.onAccountsChanged.bind(this))
-      provider.on('chainChanged', this.onChainChanged.bind(this))
-      provider.on('disconnect', this.onDisconnect.bind(this))
+      // Store bound handlers for cleanup
+      const accountsChangedHandler = this.onAccountsChanged.bind(this)
+      const chainChangedHandler = this.onChainChanged.bind(this)
+      const disconnectHandler = this.onDisconnect.bind(this)
+
+      provider.on('accountsChanged', accountsChangedHandler)
+      provider.on('chainChanged', chainChangedHandler)
+      provider.on('disconnect', disconnectHandler)
+
+      // Return cleanup function
+      return () => {
+        provider.removeListener('accountsChanged', accountsChangedHandler)
+        provider.removeListener('chainChanged', chainChangedHandler)
+        provider.removeListener('disconnect', disconnectHandler)
+      }
     }
   }))
 }
