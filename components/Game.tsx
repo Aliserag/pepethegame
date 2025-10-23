@@ -423,10 +423,6 @@ export default function Game() {
                     {currentPool === "0" && !isWalletConnected ? "Connect wallet to view" : `${currentPool} ETH`}
                   </div>
                 </div>
-                <div className="bg-gray-700 p-3 rounded-lg">
-                  <div className="text-gray-400 text-xs mb-1">Entry Fee</div>
-                  <div className="text-white text-xl font-bold">{entryFee} ETH</div>
-                </div>
 
                 {/* Claimable Rewards Section */}
                 {isWalletConnected && claimableRewards.length > 0 && (
@@ -507,6 +503,17 @@ export default function Game() {
             )}
 
             <div className="flex flex-col gap-2 items-center w-full">
+              {/* Leaderboard Button (DEGEN Mode only) */}
+              {selectedMode === "degen" && (
+                <button
+                  onClick={() => setShowLeaderboardModal(true)}
+                  className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition-all w-full"
+                  style={{ fontFamily: "'Press Start 2P', cursive" }}
+                >
+                  🏆 Today's Leaderboard
+                </button>
+              )}
+
               {/* Home Button */}
               <button
                 onClick={() => {
@@ -521,17 +528,6 @@ export default function Game() {
               >
                 🏠 Home
               </button>
-
-              {/* Leaderboard Button (DEGEN Mode only) */}
-              {selectedMode === "degen" && (
-                <button
-                  onClick={() => setShowLeaderboardModal(true)}
-                  className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition-all w-full"
-                  style={{ fontFamily: "'Press Start 2P', cursive" }}
-                >
-                  🏆 Today's Leaderboard
-                </button>
-              )}
             </div>
           </div>
         </div>
