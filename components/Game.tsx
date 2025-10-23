@@ -356,98 +356,6 @@ export default function Game() {
               </div>
             )}
 
-            {/* DEGEN Mode specific UI */}
-            {selectedMode === "degen" && (
-              <div className="space-y-3 mb-4">
-                <div className="bg-gray-900 bg-opacity-80 border-2 border-gray-700 p-3 rounded-lg">
-                  <div className="text-gray-400 text-xs mb-1">Prize Pool</div>
-                  <div className="text-white text-xl font-bold">
-                    {currentPool === "0" && !isWalletConnected ? "Connect wallet to view" : `${currentPool} ETH`}
-                  </div>
-                </div>
-                <div className="bg-gray-900 bg-opacity-80 border-2 border-gray-700 p-3 rounded-lg">
-                  <div className="text-gray-400 text-xs mb-1">Entry Fee</div>
-                  <div className="text-white text-xl font-bold">{entryFee} ETH</div>
-                </div>
-
-                {/* Claimable Rewards Section */}
-                {isWalletConnected && claimableRewards.length > 0 && (
-                  <div className="bg-gray-900 bg-opacity-80 border-2 border-yellow-500 p-3 rounded-lg relative overflow-hidden">
-                    <div className="absolute top-0 right-0 text-4xl opacity-20">💰</div>
-                    <div className="relative z-10">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <span className="text-2xl">🏆</span>
-                        <div className="text-yellow-400 text-xs font-bold">REWARDS AVAILABLE!</div>
-                        <span className="text-2xl">🏆</span>
-                      </div>
-                      <div className="text-yellow-300 text-lg font-bold text-center mb-2">
-                        {claimableRewards.reduce((sum, r) => sum + parseFloat(r.amount), 0).toFixed(4)} ETH
-                      </div>
-                      <div className="text-gray-400 text-[10px] text-center mb-3">
-                        {claimableRewards.length} reward{claimableRewards.length > 1 ? 's' : ''} ready to claim
-                      </div>
-
-                      {/* Individual Claim Buttons */}
-                      <div className="space-y-2">
-                        {claimableRewards.map((reward) => (
-                          <button
-                            key={reward.day}
-                            onClick={async () => {
-                              const success = await claimReward(reward.day);
-                              if (success) {
-                                // Reward claimed successfully, data will auto-refresh
-                              }
-                            }}
-                            disabled={isClaiming}
-                            className={`w-full ${
-                              isClaiming
-                                ? "bg-gray-600 cursor-not-allowed text-gray-400"
-                                : "bg-gray-800 hover:bg-gray-700 text-yellow-400 hover:text-yellow-300"
-                            } font-bold py-2 px-4 rounded-lg text-[10px] transition-all border border-gray-700`}
-                            style={{ fontFamily: "'Press Start 2P', cursive" }}
-                          >
-                            {isClaiming ? "Processing..." : `💰 Claim Day ${reward.day}: ${parseFloat(reward.amount).toFixed(4)} ETH`}
-                          </button>
-                        ))}
-
-                        {/* Claim All Button (if multiple rewards) */}
-                        {claimableRewards.length > 1 && (
-                          <button
-                            onClick={async () => {
-                              const success = await claimAllRewards();
-                              if (success) {
-                                // All rewards claimed successfully
-                              }
-                            }}
-                            disabled={isClaiming}
-                            className={`w-full ${
-                              isClaiming
-                                ? "bg-gray-600 cursor-not-allowed text-gray-400"
-                                : "bg-gray-800 hover:bg-gray-700 text-yellow-400 hover:text-yellow-300"
-                            } font-bold py-2 px-4 rounded-lg text-[10px] transition-all border border-yellow-600 animate-pulse`}
-                            style={{ fontFamily: "'Press Start 2P', cursive" }}
-                          >
-                            {isClaiming ? "Processing..." : `🎁 Claim All ${claimableRewards.length} Rewards`}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {degenError && !isClaiming && (
-                  <div className="text-red-400 text-xs text-center bg-red-900 bg-opacity-30 p-2 rounded">
-                    ❌ {degenError}
-                  </div>
-                )}
-                {isClaiming && (
-                  <div className="text-blue-400 text-xs text-center animate-pulse bg-blue-900 bg-opacity-30 p-2 rounded">
-                    ⏳ Processing claim transaction...
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Start/Entry buttons based on mode */}
             {selectedMode === "fun" && (
               <button
@@ -502,6 +410,98 @@ export default function Game() {
                   <>Your Best: 0</>
                 ) : (
                   <>Local Best: {topScore}</>
+                )}
+              </div>
+            )}
+
+            {/* DEGEN Mode specific UI - Below Wallet */}
+            {selectedMode === "degen" && (
+              <div className="space-y-3 w-full">
+                <div className="bg-gray-900 bg-opacity-80 border-2 border-gray-700 p-3 rounded-lg">
+                  <div className="text-gray-400 text-xs mb-1">Prize Pool</div>
+                  <div className="text-white text-xl font-bold">
+                    {currentPool === "0" && !isWalletConnected ? "Connect wallet to view" : `${currentPool} ETH`}
+                  </div>
+                </div>
+                <div className="bg-gray-900 bg-opacity-80 border-2 border-gray-700 p-3 rounded-lg">
+                  <div className="text-gray-400 text-xs mb-1">Entry Fee</div>
+                  <div className="text-white text-xl font-bold">{entryFee} ETH</div>
+                </div>
+
+                {/* Claimable Rewards Section */}
+                {isWalletConnected && claimableRewards.length > 0 && (
+                  <div className="bg-gray-900 bg-opacity-80 border-2 border-yellow-500 p-3 rounded-lg relative overflow-hidden">
+                    <div className="absolute top-0 right-0 text-4xl opacity-20">💰</div>
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <span className="text-2xl">🏆</span>
+                        <div className="text-yellow-400 text-xs font-bold">REWARDS AVAILABLE!</div>
+                        <span className="text-2xl">🏆</span>
+                      </div>
+                      <div className="text-yellow-300 text-lg font-bold text-center mb-2">
+                        {claimableRewards.reduce((sum, r) => sum + parseFloat(r.amount), 0).toFixed(4)} ETH
+                      </div>
+                      <div className="text-gray-400 text-[10px] text-center mb-3">
+                        {claimableRewards.length} reward{claimableRewards.length > 1 ? 's' : ''} ready to claim
+                      </div>
+
+                      {/* Individual Claim Buttons - Match Home/Leaderboard style */}
+                      <div className="space-y-2">
+                        {claimableRewards.map((reward) => (
+                          <button
+                            key={reward.day}
+                            onClick={async () => {
+                              const success = await claimReward(reward.day);
+                              if (success) {
+                                // Reward claimed successfully, data will auto-refresh
+                              }
+                            }}
+                            disabled={isClaiming}
+                            className={`w-full ${
+                              isClaiming
+                                ? "bg-gray-600 cursor-not-allowed text-gray-400"
+                                : "bg-gray-700 hover:bg-gray-600 text-yellow-400"
+                            } font-bold py-2 px-4 rounded-lg text-[10px] transition-all`}
+                            style={{ fontFamily: "'Press Start 2P', cursive" }}
+                          >
+                            {isClaiming ? "Processing..." : `💰 Claim Day ${reward.day}: ${parseFloat(reward.amount).toFixed(4)} ETH`}
+                          </button>
+                        ))}
+
+                        {/* Claim All Button (if multiple rewards) - Match Home/Leaderboard style */}
+                        {claimableRewards.length > 1 && (
+                          <button
+                            onClick={async () => {
+                              const success = await claimAllRewards();
+                              if (success) {
+                                // All rewards claimed successfully
+                              }
+                            }}
+                            disabled={isClaiming}
+                            className={`w-full ${
+                              isClaiming
+                                ? "bg-gray-600 cursor-not-allowed text-gray-400"
+                                : "bg-gray-700 hover:bg-gray-600 text-yellow-400"
+                            } font-bold py-2 px-4 rounded-lg text-sm transition-all animate-pulse`}
+                            style={{ fontFamily: "'Press Start 2P', cursive" }}
+                          >
+                            {isClaiming ? "Processing..." : `🎁 Claim All ${claimableRewards.length} Rewards`}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {degenError && !isClaiming && (
+                  <div className="text-red-400 text-xs text-center bg-red-900 bg-opacity-30 p-2 rounded">
+                    ❌ {degenError}
+                  </div>
+                )}
+                {isClaiming && (
+                  <div className="text-blue-400 text-xs text-center animate-pulse bg-blue-900 bg-opacity-30 p-2 rounded">
+                    ⏳ Processing claim transaction...
+                  </div>
                 )}
               </div>
             )}
