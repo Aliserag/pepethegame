@@ -4,30 +4,37 @@ import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector'
 
 // Create a simple injected connector for MetaMask/browser wallets
 function createInjectedConnector() {
-  return createConnector((config) => ({
-    id: 'injected',
-    name: 'Browser Wallet',
-    type: 'injected',
-    async connect() {
-      if (typeof window === 'undefined') throw new Error('Window not available')
+  return createConnector((config) => {
+    let cleanupListeners: (() => void) | null = null;
 
-      const provider = (window as any).ethereum
-      if (!provider) throw new Error('No injected provider found')
+    return {
+      id: 'injected',
+      name: 'Browser Wallet',
+      type: 'injected',
+      async connect() {
+        if (typeof window === 'undefined') throw new Error('Window not available')
 
-      const accounts = await provider.request({
-        method: 'eth_requestAccounts'
-      })
-      const account = accounts[0]
-      const chainId = await provider.request({ method: 'eth_chainId' })
+        const provider = (window as any).ethereum
+        if (!provider) throw new Error('No injected provider found')
 
-      return {
-        accounts: [account],
-        chainId: parseInt(chainId, 16)
-      }
-    },
-    async disconnect() {
-      // Injected wallets don't have a disconnect method
-    },
+        const accounts = await provider.request({
+          method: 'eth_requestAccounts'
+        })
+        const account = accounts[0]
+        const chainId = await provider.request({ method: 'eth_chainId' })
+
+        return {
+          accounts: [account],
+          chainId: parseInt(chainId, 16)
+        }
+      },
+      async disconnect() {
+        // Clean up event listeners when disconnecting
+        if (cleanupListeners) {
+          cleanupListeners();
+          cleanupListeners = null;
+        }
+      },
     async getAccounts() {
       if (typeof window === 'undefined') return []
 
@@ -82,29 +89,30 @@ function createInjectedConnector() {
     onDisconnect() {
       config.emitter.emit('disconnect')
     },
-    async setup() {
-      if (typeof window === 'undefined') return
+      async setup() {
+        if (typeof window === 'undefined') return
 
-      const provider = (window as any).ethereum
-      if (!provider) return
+        const provider = (window as any).ethereum
+        if (!provider) return
 
-      // Store bound handlers for cleanup
-      const accountsChangedHandler = this.onAccountsChanged.bind(this)
-      const chainChangedHandler = this.onChainChanged.bind(this)
-      const disconnectHandler = this.onDisconnect.bind(this)
+        // Store bound handlers for cleanup
+        const accountsChangedHandler = this.onAccountsChanged.bind(this)
+        const chainChangedHandler = this.onChainChanged.bind(this)
+        const disconnectHandler = this.onDisconnect.bind(this)
 
-      provider.on('accountsChanged', accountsChangedHandler)
-      provider.on('chainChanged', chainChangedHandler)
-      provider.on('disconnect', disconnectHandler)
+        provider.on('accountsChanged', accountsChangedHandler)
+        provider.on('chainChanged', chainChangedHandler)
+        provider.on('disconnect', disconnectHandler)
 
-      // Return cleanup function
-      return () => {
-        provider.removeListener('accountsChanged', accountsChangedHandler)
-        provider.removeListener('chainChanged', chainChangedHandler)
-        provider.removeListener('disconnect', disconnectHandler)
+        // Store cleanup function for disconnect
+        cleanupListeners = () => {
+          provider.removeListener('accountsChanged', accountsChangedHandler)
+          provider.removeListener('chainChanged', chainChangedHandler)
+          provider.removeListener('disconnect', disconnectHandler)
+        }
       }
     }
-  }))
+  })
 }
 
 export const config = createConfig({
