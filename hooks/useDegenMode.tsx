@@ -619,6 +619,8 @@ export default function useDegenMode() {
         console.log(`Current chain: ${chain?.id}, switching to Base Sepolia (${baseSepolia.id})`);
         await switchChainAsync({ chainId: baseSepolia.id });
         console.log("Network switched successfully");
+        // Wait a bit for the wallet client to update
+        await new Promise(resolve => setTimeout(resolve, 500));
       } catch (switchErr: any) {
         console.error("Error switching chain:", switchErr);
         if (switchErr.message?.includes("rejected") || switchErr.message?.includes("User rejected")) {
@@ -782,6 +784,8 @@ export default function useDegenMode() {
         console.log(`Current chain: ${chain?.id}, switching to Base Sepolia (${baseSepolia.id})`);
         await switchChainAsync({ chainId: baseSepolia.id });
         console.log("Network switched successfully");
+        // Wait a bit for the wallet client to update
+        await new Promise(resolve => setTimeout(resolve, 500));
       } catch (switchErr: any) {
         console.error("Error switching chain:", switchErr);
         if (switchErr.message?.includes("rejected") || switchErr.message?.includes("User rejected")) {
