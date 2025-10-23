@@ -409,7 +409,7 @@ export default function Game() {
                 ) : isConnected ? (
                   <>Your Best: 0</>
                 ) : (
-                  <>Local Best: {topScore}</>
+                  <>Your Best: {topScore}</>
                 )}
               </div>
             )}
@@ -420,7 +420,7 @@ export default function Game() {
                 <div className="bg-gray-700 p-3 rounded-lg">
                   <div className="text-gray-400 text-xs mb-1">Prize Pool</div>
                   <div className="text-white text-xl font-bold">
-                    {currentPool === "0" && !isWalletConnected ? "Connect wallet to view" : `${currentPool} ETH`}
+                    {currentPool} ETH
                   </div>
                 </div>
 
