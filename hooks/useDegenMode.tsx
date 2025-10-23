@@ -611,6 +611,24 @@ export default function useDegenMode() {
     setIsClaiming(true);
     setError(null);
 
+    // Check if we need to switch chains
+    if (chain?.id !== baseSepolia.id) {
+      try {
+        console.log(`Current chain: ${chain?.id}, switching to Base Sepolia (${baseSepolia.id})`);
+        await switchChainAsync({ chainId: baseSepolia.id });
+        console.log("Network switched successfully");
+      } catch (switchErr: any) {
+        console.error("Error switching chain:", switchErr);
+        if (switchErr.message?.includes("rejected") || switchErr.message?.includes("User rejected")) {
+          setError("Network switch cancelled");
+        } else {
+          setError("Failed to switch to Base Sepolia network. Please switch manually.");
+        }
+        setIsClaiming(false);
+        return false;
+      }
+    }
+
     try {
       const hash = await walletClient.writeContract({
         address: contractAddress,
@@ -643,7 +661,7 @@ export default function useDegenMode() {
       setIsClaiming(false);
       return false;
     }
-  }, [walletClient, address, publicClient, contractAddress, loadData]);
+  }, [walletClient, address, publicClient, contractAddress, loadData, chain, switchChainAsync]);
 
   /**
    * Calculate speed multiplier for DEGEN mode
@@ -722,6 +740,24 @@ export default function useDegenMode() {
     setIsClaiming(true);
     setError(null);
 
+    // Check if we need to switch chains
+    if (chain?.id !== baseSepolia.id) {
+      try {
+        console.log(`Current chain: ${chain?.id}, switching to Base Sepolia (${baseSepolia.id})`);
+        await switchChainAsync({ chainId: baseSepolia.id });
+        console.log("Network switched successfully");
+      } catch (switchErr: any) {
+        console.error("Error switching chain:", switchErr);
+        if (switchErr.message?.includes("rejected") || switchErr.message?.includes("User rejected")) {
+          setError("Network switch cancelled");
+        } else {
+          setError("Failed to switch to Base Sepolia network. Please switch manually.");
+        }
+        setIsClaiming(false);
+        return false;
+      }
+    }
+
     try {
       // Claim each day sequentially
       for (const { day } of claimableRewards) {
@@ -753,7 +789,7 @@ export default function useDegenMode() {
       setIsClaiming(false);
       return false;
     }
-  }, [walletClient, address, publicClient, contractAddress, claimableRewards, loadData]);
+  }, [walletClient, address, publicClient, contractAddress, claimableRewards, loadData, chain, switchChainAsync]);
 
   /**
    * Reset entry state (for "Try Again" functionality)
