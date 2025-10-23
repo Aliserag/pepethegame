@@ -146,9 +146,11 @@ const degenAbi = [
 ] as const;
 
 export default function useDegenMode() {
-  const { address, isConnected, chain } = useAccount();
+  const { address, isConnected, chain, status } = useAccount();
   const publicClient = usePublicClient({ chainId: baseSepolia.id });
-  const { data: walletClient } = useWalletClient();
+  const { data: walletClient, refetch: refetchWalletClient } = useWalletClient({
+    chainId: baseSepolia.id
+  });
   const { switchChainAsync } = useSwitchChain();
 
   const [isEntering, setIsEntering] = useState(false);
@@ -389,8 +391,8 @@ export default function useDegenMode() {
    * Enter game (pay entry fee)
    */
   const enterGame = useCallback(async (): Promise<boolean> => {
-    if (!walletClient || !address || !publicClient) {
-      const errorMsg = `Wallet not connected: walletClient=${!!walletClient}, address=${!!address}, publicClient=${!!publicClient}`;
+    if (!address || !publicClient) {
+      const errorMsg = `Wallet not connected: address=${!!address}, publicClient=${!!publicClient}`;
       console.error(errorMsg);
       setError("Wallet not connected");
       return false;
@@ -400,115 +402,156 @@ export default function useDegenMode() {
     setError(null);
     setProcessingMessage("Preparing transaction...");
 
-    // Check if we need to switch chains
-    if (chain?.id !== baseSepolia.id) {
-      try {
-        setProcessingMessage("Switching to Base Sepolia network...");
-        console.log(`Current chain: ${chain?.id}, switching to Base Sepolia (${baseSepolia.id})`);
-        await switchChainAsync({ chainId: baseSepolia.id });
-        setProcessingMessage("Network switched. Preparing transaction...");
-      } catch (switchErr: any) {
-        console.error("Error switching chain:", switchErr);
-        if (switchErr.message?.includes("rejected") || switchErr.message?.includes("User rejected")) {
-          setError("Network switch cancelled");
-        } else {
-          setError("Failed to switch to Base Sepolia network. Please switch manually.");
+    try {
+      // 1. Check account status - wait if reconnecting
+      if (status === 'reconnecting') {
+        setProcessingMessage("Waiting for wallet connection...");
+        let attempts = 0;
+        while (status === 'reconnecting' && attempts < 50) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
         }
-        setIsEntering(false);
-        setProcessingMessage(null);
-        return false;
-      }
-    }
 
-    // Retry logic with exponential backoff
-    const maxRetries = 3;
-    let retryCount = 0;
-
-    while (retryCount <= maxRetries) {
-      try {
-        const fee = parseEther(entryFee);
-        console.log("Entering game with fee:", entryFee, "ETH (", fee.toString(), "wei)");
-        console.log("Contract address:", contractAddress);
-        console.log("Wallet address:", address);
-
-        setProcessingMessage("Confirm transaction in wallet...");
-
-        const hash = await walletClient.writeContract({
-          address: contractAddress,
-          abi: degenAbi,
-          functionName: "enterGame",
-          value: fee,
-          chain: baseSepolia,
-        });
-
-        console.log("Entry transaction sent:", hash);
-        setProcessingMessage("Transaction submitted. Waiting for confirmation...");
-
-        const receipt = await publicClient.waitForTransactionReceipt({ hash });
-        console.log("Transaction receipt:", receipt);
-
-        if (receipt.status === "success") {
-          setProcessingMessage("Success! Loading game data...");
-          setHasEntered(true);
-          setHasPlayed(true);
-          await loadData();
-          setIsEntering(false);
-          setProcessingMessage(null);
-          return true;
-        } else {
-          console.error("Transaction failed with status:", receipt.status);
-          setError("Entry transaction failed");
+        if (status !== 'connected') {
+          setError("Wallet connection not ready. Please try again.");
           setIsEntering(false);
           setProcessingMessage(null);
           return false;
         }
-      } catch (err: any) {
-        console.error(`Error entering game (attempt ${retryCount + 1}/${maxRetries + 1}) - Full error:`, err);
-        console.error("Error message:", err.message);
-        console.error("Error code:", err.code);
+      }
 
-        // Check if it's a rate limit error
-        if (err.message?.includes("rate limit")) {
-          retryCount++;
-          if (retryCount <= maxRetries) {
-            const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s, 8s
-            console.log(`Rate limited. Retrying in ${waitTime/1000}s...`);
-            setProcessingMessage(`Network busy. Auto-retrying in ${waitTime/1000}s... (${retryCount}/${maxRetries})`);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-            continue; // Retry
-          } else {
-            setError("Network too busy. Please try again in 30 seconds.");
+      // 2. Check if we need to switch chains
+      if (chain?.id !== baseSepolia.id) {
+        setProcessingMessage("Switching to Base Sepolia network...");
+        console.log(`Current chain: ${chain?.id}, switching to Base Sepolia (${baseSepolia.id})`);
+
+        try {
+          await switchChainAsync({ chainId: baseSepolia.id });
+
+          // 3. Refetch wallet client to get updated client for new chain
+          setProcessingMessage("Verifying network switch...");
+          await refetchWalletClient();
+
+          // 4. Wait for wallet client to be on correct chain (active polling instead of fixed delay)
+          let chainSwitched = false;
+          for (let i = 0; i < 30; i++) { // 3 seconds max (30 * 100ms)
+            await new Promise(resolve => setTimeout(resolve, 100));
+            const { data: freshClient } = await refetchWalletClient();
+            if (freshClient?.chain?.id === baseSepolia.id) {
+              chainSwitched = true;
+              console.log("✅ Wallet client confirmed on Base Sepolia");
+              break;
+            }
+          }
+
+          if (!chainSwitched) {
+            setError("Network switch timeout. Please try again.");
             setIsEntering(false);
             setProcessingMessage(null);
             return false;
           }
-        }
 
-        // Other errors - don't retry
-        setProcessingMessage(null);
-        if (err.message?.includes("Already played today")) {
-          setError("You've already played today. Come back tomorrow!");
-        } else if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
-          setError("Transaction cancelled");
-        } else if (err.message?.includes("insufficient funds")) {
-          setError("Insufficient ETH balance");
-        } else {
-          setError(`Failed to enter game: ${err.message || "Unknown error"}`);
+          setProcessingMessage("Network switched successfully!");
+          await new Promise(resolve => setTimeout(resolve, 200)); // Brief stabilization
+        } catch (switchErr: any) {
+          console.error("Error switching chain:", switchErr);
+          if (switchErr.message?.includes("rejected") || switchErr.message?.includes("User rejected")) {
+            setError("Network switch cancelled");
+          } else {
+            setError("Failed to switch to Base Sepolia network. Please switch manually.");
+          }
+          setIsEntering(false);
+          setProcessingMessage(null);
+          return false;
         }
+      }
+
+      // 5. Get fresh wallet client (should be on correct chain now)
+      const { data: freshWalletClient } = await refetchWalletClient();
+
+      if (!freshWalletClient) {
+        setError("Wallet client not ready. Please try again.");
         setIsEntering(false);
+        setProcessingMessage(null);
         return false;
       }
-    }
 
-    setIsEntering(false);
-    return false;
-  }, [walletClient, address, publicClient, contractAddress, entryFee, loadData, chain, switchChainAsync]);
+      // 6. Verify we're on the correct chain before transaction
+      if (freshWalletClient.chain?.id !== baseSepolia.id) {
+        setError(`Chain mismatch detected (on ${freshWalletClient.chain?.id}, expected ${baseSepolia.id}). Please try again.`);
+        setIsEntering(false);
+        setProcessingMessage(null);
+        return false;
+      }
+
+      // 7. Simulate and execute transaction
+      const fee = parseEther(entryFee);
+      console.log("Entering game with fee:", entryFee, "ETH (", fee.toString(), "wei)");
+      console.log("Contract address:", contractAddress);
+      console.log("Wallet address:", address);
+
+      // Simulate transaction first to catch errors before user signs
+      setProcessingMessage("Validating transaction...");
+
+      const { request } = await publicClient.simulateContract({
+        account: address,
+        address: contractAddress,
+        abi: degenAbi,
+        functionName: "enterGame",
+        value: fee,
+        chain: baseSepolia,
+      });
+
+      setProcessingMessage("Confirm transaction in wallet...");
+
+      const hash = await freshWalletClient.writeContract(request);
+
+      console.log("Entry transaction sent:", hash);
+      setProcessingMessage("Transaction submitted. Waiting for confirmation...");
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      console.log("Transaction receipt:", receipt);
+
+      if (receipt.status === "success") {
+        setProcessingMessage("Success! Loading game data...");
+        setHasEntered(true);
+        setHasPlayed(true);
+        await loadData();
+        setIsEntering(false);
+        setProcessingMessage(null);
+        return true;
+      } else {
+        console.error("Transaction failed with status:", receipt.status);
+        setError("Entry transaction failed");
+        setIsEntering(false);
+        setProcessingMessage(null);
+        return false;
+      }
+    } catch (err: any) {
+      console.error("Error entering game:", err);
+      setProcessingMessage(null);
+
+      if (err.message?.includes("Already played today")) {
+        setError("You've already played today. Come back tomorrow!");
+      } else if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
+        setError("Transaction cancelled");
+      } else if (err.message?.includes("insufficient funds")) {
+        setError("Insufficient ETH balance");
+      } else if (err.message?.includes("Chain")) {
+        setError("Network error. Please ensure you're on Base Sepolia and try again.");
+      } else {
+        setError(`Failed to enter game: ${err.message || "Unknown error"}`);
+      }
+      setIsEntering(false);
+      return false;
+    }
+  }, [address, publicClient, contractAddress, entryFee, loadData, chain, switchChainAsync, refetchWalletClient, status]);
 
   /**
    * Submit score after game ends
    */
   const submitScore = useCallback(async (score: number): Promise<boolean> => {
-    if (!walletClient || !address || !publicClient) {
+    if (!address || !publicClient) {
       setError("Wallet not connected");
       return false;
     }
@@ -522,90 +565,89 @@ export default function useDegenMode() {
     setError(null);
     setProcessingMessage("Preparing score submission...");
 
-    // Retry logic with exponential backoff
-    const maxRetries = 3;
-    let retryCount = 0;
+    try {
+      // 1. Get fresh wallet client
+      const { data: freshWalletClient } = await refetchWalletClient();
 
-    while (retryCount <= maxRetries) {
-      try {
-        setProcessingMessage("Confirm transaction in wallet...");
-
-        const hash = await walletClient.writeContract({
-          address: contractAddress,
-          abi: degenAbi,
-          functionName: "submitScore",
-          args: [BigInt(score)],
-          chain: baseSepolia,
-        });
-
-        console.log("Score submission transaction sent:", hash);
-        setProcessingMessage("Transaction submitted. Waiting for confirmation...");
-
-        const receipt = await publicClient.waitForTransactionReceipt({ hash });
-
-        if (receipt.status === "success") {
-          setProcessingMessage("Success! Calculating rewards...");
-          // Calculate potential reward
-          const reward = await publicClient.readContract({
-            address: contractAddress,
-            abi: degenAbi,
-            functionName: "calculateReward",
-            args: [address, BigInt(currentDay)],
-          }) as bigint;
-          setPotentialReward(formatEther(reward));
-
-          setIsSubmitting(false);
-          setProcessingMessage(null);
-          return true;
-        } else {
-          setError("Score submission failed");
-          setIsSubmitting(false);
-          setProcessingMessage(null);
-          return false;
-        }
-      } catch (err: any) {
-        console.error(`Error submitting score (attempt ${retryCount + 1}/${maxRetries + 1}):`, err);
-
-        // Check if it's a rate limit error
-        if (err.message?.includes("rate limit")) {
-          retryCount++;
-          if (retryCount <= maxRetries) {
-            const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s, 8s
-            console.log(`Rate limited. Retrying in ${waitTime/1000}s...`);
-            setProcessingMessage(`Network busy. Auto-retrying in ${waitTime/1000}s... (${retryCount}/${maxRetries})`);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-            continue; // Retry
-          } else {
-            setError("Network too busy. Please try again in 30 seconds.");
-            setIsSubmitting(false);
-            setProcessingMessage(null);
-            return false;
-          }
-        }
-
-        // Other errors - don't retry
-        setProcessingMessage(null);
-        if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
-          setError("Transaction cancelled");
-        } else if (err.message?.includes("insufficient funds")) {
-          setError("Insufficient gas");
-        } else {
-          setError(`Failed to submit score: ${err.message || "Unknown error"}`);
-        }
+      if (!freshWalletClient) {
+        setError("Wallet client not ready. Please try again.");
         setIsSubmitting(false);
+        setProcessingMessage(null);
         return false;
       }
-    }
 
-    setIsSubmitting(false);
-    return false;
-  }, [walletClient, address, publicClient, contractAddress, hasEntered, currentDay]);
+      // 2. Verify we're on the correct chain
+      if (freshWalletClient.chain?.id !== baseSepolia.id) {
+        setError(`Chain mismatch detected. Please switch to Base Sepolia and try again.`);
+        setIsSubmitting(false);
+        setProcessingMessage(null);
+        return false;
+      }
+
+      // 3. Simulate transaction first
+      setProcessingMessage("Validating transaction...");
+
+      const { request } = await publicClient.simulateContract({
+        account: address,
+        address: contractAddress,
+        abi: degenAbi,
+        functionName: "submitScore",
+        args: [BigInt(score)],
+        chain: baseSepolia,
+      });
+
+      setProcessingMessage("Confirm transaction in wallet...");
+
+      const hash = await freshWalletClient.writeContract(request);
+
+      console.log("Score submission transaction sent:", hash);
+      setProcessingMessage("Transaction submitted. Waiting for confirmation...");
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+      if (receipt.status === "success") {
+        setProcessingMessage("Success! Calculating rewards...");
+        // Calculate potential reward
+        const reward = await publicClient.readContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "calculateReward",
+          args: [address, BigInt(currentDay)],
+        }) as bigint;
+        setPotentialReward(formatEther(reward));
+
+        setIsSubmitting(false);
+        setProcessingMessage(null);
+        return true;
+      } else {
+        setError("Score submission failed");
+        setIsSubmitting(false);
+        setProcessingMessage(null);
+        return false;
+      }
+    } catch (err: any) {
+      console.error("Error submitting score:", err);
+      setProcessingMessage(null);
+
+      if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
+        setError("Transaction cancelled");
+      } else if (err.message?.includes("insufficient funds")) {
+        setError("Insufficient gas");
+      } else if (err.message?.includes("Chain")) {
+        setError("Network error. Please ensure you're on Base Sepolia and try again.");
+      } else {
+        setError(`Failed to submit score: ${err.message || "Unknown error"}`);
+      }
+      setIsSubmitting(false);
+      return false;
+    }
+  }, [address, publicClient, contractAddress, hasEntered, currentDay, refetchWalletClient]);
 
   /**
    * Claim rewards from a previous day
    */
   const claimReward = useCallback(async (day: number): Promise<boolean> => {
-    if (!walletClient || !address || !publicClient) {
+    if (!address || !publicClient) {
       setError("Wallet not connected");
       return false;
     }
@@ -613,93 +655,108 @@ export default function useDegenMode() {
     setIsClaiming(true);
     setError(null);
 
-    // Check if we need to switch chains
-    if (chain?.id !== baseSepolia.id) {
-      try {
+    try {
+      // 1. Check if we need to switch chains
+      if (chain?.id !== baseSepolia.id) {
         console.log(`Current chain: ${chain?.id}, switching to Base Sepolia (${baseSepolia.id})`);
-        await switchChainAsync({ chainId: baseSepolia.id });
-        console.log("Network switched successfully");
-        // Wait a bit for the wallet client to update
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } catch (switchErr: any) {
-        console.error("Error switching chain:", switchErr);
-        if (switchErr.message?.includes("rejected") || switchErr.message?.includes("User rejected")) {
-          setError("Network switch cancelled");
-        } else {
-          setError("Failed to switch to Base Sepolia network. Please switch manually.");
-        }
-        setIsClaiming(false);
-        return false;
-      }
-    }
 
-    // Retry logic with exponential backoff
-    const maxRetries = 3;
-    let retryCount = 0;
+        try {
+          await switchChainAsync({ chainId: baseSepolia.id });
 
-    while (retryCount <= maxRetries) {
-      try {
-        const hash = await walletClient.writeContract({
-          address: contractAddress,
-          abi: degenAbi,
-          functionName: "claimReward",
-          args: [BigInt(day)],
-          chain: baseSepolia,
-        });
+          // Wait for wallet client to update
+          await refetchWalletClient();
 
-        console.log("Claim transaction sent:", hash);
-        console.log("🔗 View on block explorer: https://sepolia.basescan.org/tx/" + hash);
+          let chainSwitched = false;
+          for (let i = 0; i < 30; i++) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            const { data: freshClient } = await refetchWalletClient();
+            if (freshClient?.chain?.id === baseSepolia.id) {
+              chainSwitched = true;
+              console.log("✅ Wallet client confirmed on Base Sepolia");
+              break;
+            }
+          }
 
-        const receipt = await publicClient.waitForTransactionReceipt({ hash });
-        console.log("Transaction receipt:", receipt);
-
-        if (receipt.status === "success") {
-          console.log("✅ Claim successful! Transaction:", hash);
-          console.log("Gas used:", receipt.gasUsed.toString());
-          console.log("Block number:", receipt.blockNumber.toString());
-          await loadData();
-          setIsClaiming(false);
-          return true;
-        } else {
-          console.error("❌ Claim transaction failed. Receipt:", receipt);
-          setError("Claim transaction failed");
-          setIsClaiming(false);
-          return false;
-        }
-      } catch (err: any) {
-        console.error(`Error claiming reward (attempt ${retryCount + 1}/${maxRetries + 1}):`, err);
-
-        // Check if it's a rate limit error
-        if (err.message?.includes("rate limit")) {
-          retryCount++;
-          if (retryCount <= maxRetries) {
-            const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s, 8s
-            console.log(`Rate limited. Retrying in ${waitTime/1000}s...`);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-            continue; // Retry
-          } else {
-            setError("Network too busy. Please try again in 30 seconds.");
+          if (!chainSwitched) {
+            setError("Network switch timeout. Please try again.");
             setIsClaiming(false);
             return false;
           }
+        } catch (switchErr: any) {
+          console.error("Error switching chain:", switchErr);
+          if (switchErr.message?.includes("rejected") || switchErr.message?.includes("User rejected")) {
+            setError("Network switch cancelled");
+          } else {
+            setError("Failed to switch to Base Sepolia network. Please switch manually.");
+          }
+          setIsClaiming(false);
+          return false;
         }
+      }
 
-        // Other errors - don't retry
-        if (err.message?.includes("No reward")) {
-          setError("No reward to claim");
-        } else if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
-          setError("Transaction cancelled");
-        } else {
-          setError("Failed to claim reward");
-        }
+      // 2. Get fresh wallet client
+      const { data: freshWalletClient } = await refetchWalletClient();
+
+      if (!freshWalletClient) {
+        setError("Wallet client not ready. Please try again.");
         setIsClaiming(false);
         return false;
       }
-    }
 
-    setIsClaiming(false);
-    return false;
-  }, [walletClient, address, publicClient, contractAddress, loadData, chain, switchChainAsync]);
+      // 3. Verify chain
+      if (freshWalletClient.chain?.id !== baseSepolia.id) {
+        setError(`Chain mismatch. Please try again.`);
+        setIsClaiming(false);
+        return false;
+      }
+
+      // 4. Simulate and execute
+      const { request } = await publicClient.simulateContract({
+        account: address,
+        address: contractAddress,
+        abi: degenAbi,
+        functionName: "claimReward",
+        args: [BigInt(day)],
+        chain: baseSepolia,
+      });
+
+      const hash = await freshWalletClient.writeContract(request);
+
+      console.log("Claim transaction sent:", hash);
+      console.log("🔗 View on block explorer: https://sepolia.basescan.org/tx/" + hash);
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      console.log("Transaction receipt:", receipt);
+
+      if (receipt.status === "success") {
+        console.log("✅ Claim successful! Transaction:", hash);
+        console.log("Gas used:", receipt.gasUsed.toString());
+        console.log("Block number:", receipt.blockNumber.toString());
+        await loadData();
+        setIsClaiming(false);
+        return true;
+      } else {
+        console.error("❌ Claim transaction failed. Receipt:", receipt);
+        setError("Claim transaction failed");
+        setIsClaiming(false);
+        return false;
+      }
+    } catch (err: any) {
+      console.error("Error claiming reward:", err);
+
+      if (err.message?.includes("No reward")) {
+        setError("No reward to claim");
+      } else if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
+        setError("Transaction cancelled");
+      } else if (err.message?.includes("Chain")) {
+        setError("Network error. Please ensure you're on Base Sepolia and try again.");
+      } else {
+        setError("Failed to claim reward");
+      }
+      setIsClaiming(false);
+      return false;
+    }
+  }, [address, publicClient, contractAddress, loadData, chain, switchChainAsync, refetchWalletClient]);
 
   /**
    * Calculate speed multiplier for DEGEN mode
@@ -765,7 +822,7 @@ export default function useDegenMode() {
    * Claim all available rewards
    */
   const claimAllRewards = useCallback(async (): Promise<boolean> => {
-    if (!walletClient || !address || !publicClient) {
+    if (!address || !publicClient) {
       setError("Wallet not connected");
       return false;
     }
@@ -778,91 +835,22 @@ export default function useDegenMode() {
     setIsClaiming(true);
     setError(null);
 
-    // Check if we need to switch chains
-    if (chain?.id !== baseSepolia.id) {
-      try {
-        console.log(`Current chain: ${chain?.id}, switching to Base Sepolia (${baseSepolia.id})`);
-        await switchChainAsync({ chainId: baseSepolia.id });
-        console.log("Network switched successfully");
-        // Wait a bit for the wallet client to update
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } catch (switchErr: any) {
-        console.error("Error switching chain:", switchErr);
-        if (switchErr.message?.includes("rejected") || switchErr.message?.includes("User rejected")) {
-          setError("Network switch cancelled");
-        } else {
-          setError("Failed to switch to Base Sepolia network. Please switch manually.");
-        }
-        setIsClaiming(false);
-        return false;
-      }
-    }
-
-    // Retry logic with exponential backoff for each claim
-    const maxRetries = 3;
-
     try {
-      // Claim each day sequentially
+      // Use the fixed claimReward function for each day
       for (const { day } of claimableRewards) {
-        let retryCount = 0;
-        let claimed = false;
+        // Reset error before each claim
+        setError(null);
 
-        while (retryCount <= maxRetries && !claimed) {
-          try {
-            const hash = await walletClient.writeContract({
-              address: contractAddress,
-              abi: degenAbi,
-              functionName: "claimReward",
-              args: [BigInt(day)],
-              chain: baseSepolia,
-            });
-
-            console.log(`Claim transaction for day ${day} sent:`, hash);
-            console.log(`🔗 View on block explorer: https://sepolia.basescan.org/tx/${hash}`);
-
-            const receipt = await publicClient.waitForTransactionReceipt({ hash });
-            console.log(`Transaction receipt for day ${day}:`, receipt);
-
-            if (receipt.status === "success") {
-              console.log(`✅ Claim successful for day ${day}! Transaction:`, hash);
-              claimed = true;
-            } else {
-              console.error(`❌ Claim failed for day ${day}. Receipt:`, receipt);
-              setError(`Failed to claim reward for day ${day}`);
-              setIsClaiming(false);
-              return false;
-            }
-          } catch (err: any) {
-            console.error(`Error claiming reward for day ${day} (attempt ${retryCount + 1}/${maxRetries + 1}):`, err);
-
-            // Check if it's a rate limit error
-            if (err.message?.includes("rate limit")) {
-              retryCount++;
-              if (retryCount <= maxRetries) {
-                const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s, 8s
-                console.log(`Rate limited. Retrying in ${waitTime/1000}s...`);
-                await new Promise(resolve => setTimeout(resolve, waitTime));
-                continue; // Retry
-              } else {
-                setError("Network too busy. Please try again in 30 seconds.");
-                setIsClaiming(false);
-                return false;
-              }
-            }
-
-            // Other errors - don't retry, fail the entire batch
-            if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
-              setError("Transaction cancelled");
-            } else {
-              setError(`Failed to claim reward for day ${day}`);
-            }
-            setIsClaiming(false);
-            return false;
-          }
+        const success = await claimReward(day);
+        if (!success) {
+          setIsClaiming(false);
+          return false;
         }
+
+        // Brief delay between claims to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
 
-      await loadData();
       setIsClaiming(false);
       return true;
     } catch (err: any) {
@@ -871,7 +859,7 @@ export default function useDegenMode() {
       setIsClaiming(false);
       return false;
     }
-  }, [walletClient, address, publicClient, contractAddress, claimableRewards, loadData, chain, switchChainAsync]);
+  }, [address, publicClient, claimableRewards, claimReward]);
 
   /**
    * Reset entry state (for "Try Again" functionality)
