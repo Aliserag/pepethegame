@@ -19,6 +19,35 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
+        {/* Suppress browser extension errors immediately */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Suppress extension errors before React loads
+              (function() {
+                const originalError = console.error;
+                console.error = function(...args) {
+                  const msg = args[0]?.toString() || '';
+                  if (msg.includes('Could not establish connection') ||
+                      msg.includes('Receiving end does not exist') ||
+                      msg.includes('runtime.lastError')) {
+                    return;
+                  }
+                  originalError.apply(console, args);
+                };
+
+                window.addEventListener('unhandledrejection', function(e) {
+                  const reason = e.reason?.toString() || '';
+                  if (reason.includes('Could not establish connection') ||
+                      reason.includes('Receiving end does not exist')) {
+                    e.preventDefault();
+                  }
+                });
+              })();
+            `,
+          }}
+        />
+
         {/* Farcaster Mini App Meta Tags */}
         <meta
           property="fc:miniapp"
