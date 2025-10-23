@@ -201,13 +201,23 @@ export default function useDegenMode() {
 
       await delay(300);
 
-      // Get current pool
-      const pool = await publicClient.readContract({
-        address: contractAddress,
-        abi: degenAbi,
-        functionName: "getCurrentPool",
-      }) as bigint;
-      setCurrentPool(formatEther(pool));
+      // Get current pool with error handling
+      try {
+        console.log("Fetching current pool from contract...");
+        const pool = await publicClient.readContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "getCurrentPool",
+        }) as bigint;
+        console.log("Current pool (bigint):", pool.toString());
+        const poolFormatted = formatEther(pool);
+        console.log("Current pool (ETH):", poolFormatted);
+        setCurrentPool(poolFormatted);
+      } catch (poolErr) {
+        console.error("Error loading current pool:", poolErr);
+        // Don't set to "0" if it fails, keep previous value or set to loading indicator
+        console.warn("Failed to fetch pool, keeping previous value");
+      }
 
       await delay(300);
 
