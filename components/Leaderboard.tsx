@@ -21,22 +21,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ refreshTrigger }) => {
   // Hardcode the contract address as fallback if env var doesn't work
   const contractAddress = (process.env.NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS || "0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c") as `0x${string}`;
 
-  useEffect(() => {
-    console.log("=== Leaderboard Debug ===");
-    console.log("Contract Address:", contractAddress);
-    console.log("Public Client:", !!publicClient);
-    loadLeaderboard();
-  }, []);
-
-  // Auto-refresh when refreshTrigger changes
-  useEffect(() => {
-    if (refreshTrigger !== undefined && refreshTrigger > 0) {
-      console.log("Leaderboard: Auto-refreshing due to trigger change");
-      loadLeaderboard();
-    }
-  }, [refreshTrigger]);
-
-  async function loadLeaderboard() {
+  const loadLeaderboard = async () => {
     if (!publicClient || !contractAddress) {
       console.log("Leaderboard: Missing publicClient or contractAddress");
       setLoading(false);
@@ -74,7 +59,24 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ refreshTrigger }) => {
     } finally {
       setLoading(false);
     }
-  }
+  };
+
+  useEffect(() => {
+    console.log("=== Leaderboard Debug ===");
+    console.log("Contract Address:", contractAddress);
+    console.log("Public Client:", !!publicClient);
+    loadLeaderboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-refresh when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger !== undefined && refreshTrigger > 0) {
+      console.log("Leaderboard: Auto-refreshing due to trigger change");
+      loadLeaderboard();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshTrigger]);
 
   function formatAddress(address: string) {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
