@@ -377,7 +377,7 @@ export default function Game() {
                   } text-white font-bold py-3 px-6 rounded-lg text-sm w-full transition-all`}
                   style={{ fontFamily: "'Press Start 2P', cursive" }}
                 >
-                  {isEntering ? "Processing..." : `💎 Pay ${entryFee} ETH to Enter`}
+                  {isEntering ? "Processing..." : `🎮 Pay ${entryFee} ETH to Enter`}
                 </button>
                 {degenProcessingMessage && (
                   <div className="text-blue-400 text-xs text-center animate-pulse bg-blue-900 bg-opacity-30 p-2 rounded">
