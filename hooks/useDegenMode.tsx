@@ -629,38 +629,66 @@ export default function useDegenMode() {
       }
     }
 
-    try {
-      const hash = await walletClient.writeContract({
-        address: contractAddress,
-        abi: degenAbi,
-        functionName: "claimReward",
-        args: [BigInt(day)],
-        chain: baseSepolia,
-      });
+    // Retry logic with exponential backoff
+    const maxRetries = 3;
+    let retryCount = 0;
 
-      console.log("Claim transaction sent:", hash);
+    while (retryCount <= maxRetries) {
+      try {
+        const hash = await walletClient.writeContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "claimReward",
+          args: [BigInt(day)],
+          chain: baseSepolia,
+        });
 
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+        console.log("Claim transaction sent:", hash);
 
-      if (receipt.status === "success") {
-        await loadData();
-        setIsClaiming(false);
-        return true;
-      } else {
-        setError("Claim transaction failed");
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+        if (receipt.status === "success") {
+          await loadData();
+          setIsClaiming(false);
+          return true;
+        } else {
+          setError("Claim transaction failed");
+          setIsClaiming(false);
+          return false;
+        }
+      } catch (err: any) {
+        console.error(`Error claiming reward (attempt ${retryCount + 1}/${maxRetries + 1}):`, err);
+
+        // Check if it's a rate limit error
+        if (err.message?.includes("rate limit")) {
+          retryCount++;
+          if (retryCount <= maxRetries) {
+            const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s, 8s
+            console.log(`Rate limited. Retrying in ${waitTime/1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue; // Retry
+          } else {
+            setError("Network too busy. Please try again in 30 seconds.");
+            setIsClaiming(false);
+            return false;
+          }
+        }
+
+        // Other errors - don't retry
+        if (err.message?.includes("No reward")) {
+          setError("No reward to claim");
+        } else if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
+          setError("Transaction cancelled");
+        } else {
+          setError("Failed to claim reward");
+        }
         setIsClaiming(false);
         return false;
       }
-    } catch (err: any) {
-      console.error("Error claiming reward:", err);
-      if (err.message?.includes("No reward")) {
-        setError("No reward to claim");
-      } else {
-        setError("Failed to claim reward");
-      }
-      setIsClaiming(false);
-      return false;
     }
+
+    setIsClaiming(false);
+    return false;
   }, [walletClient, address, publicClient, contractAddress, loadData, chain, switchChainAsync]);
 
   /**
@@ -758,25 +786,63 @@ export default function useDegenMode() {
       }
     }
 
+    // Retry logic with exponential backoff for each claim
+    const maxRetries = 3;
+
     try {
       // Claim each day sequentially
       for (const { day } of claimableRewards) {
-        const hash = await walletClient.writeContract({
-          address: contractAddress,
-          abi: degenAbi,
-          functionName: "claimReward",
-          args: [BigInt(day)],
-          chain: baseSepolia,
-        });
+        let retryCount = 0;
+        let claimed = false;
 
-        console.log(`Claim transaction for day ${day} sent:`, hash);
+        while (retryCount <= maxRetries && !claimed) {
+          try {
+            const hash = await walletClient.writeContract({
+              address: contractAddress,
+              abi: degenAbi,
+              functionName: "claimReward",
+              args: [BigInt(day)],
+              chain: baseSepolia,
+            });
 
-        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+            console.log(`Claim transaction for day ${day} sent:`, hash);
 
-        if (receipt.status !== "success") {
-          setError(`Failed to claim reward for day ${day}`);
-          setIsClaiming(false);
-          return false;
+            const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+            if (receipt.status === "success") {
+              claimed = true;
+            } else {
+              setError(`Failed to claim reward for day ${day}`);
+              setIsClaiming(false);
+              return false;
+            }
+          } catch (err: any) {
+            console.error(`Error claiming reward for day ${day} (attempt ${retryCount + 1}/${maxRetries + 1}):`, err);
+
+            // Check if it's a rate limit error
+            if (err.message?.includes("rate limit")) {
+              retryCount++;
+              if (retryCount <= maxRetries) {
+                const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s, 8s
+                console.log(`Rate limited. Retrying in ${waitTime/1000}s...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+                continue; // Retry
+              } else {
+                setError("Network too busy. Please try again in 30 seconds.");
+                setIsClaiming(false);
+                return false;
+              }
+            }
+
+            // Other errors - don't retry, fail the entire batch
+            if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
+              setError("Transaction cancelled");
+            } else {
+              setError(`Failed to claim reward for day ${day}`);
+            }
+            setIsClaiming(false);
+            return false;
+          }
         }
       }
 
