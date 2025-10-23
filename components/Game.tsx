@@ -359,14 +359,14 @@ export default function Game() {
             {/* DEGEN Mode specific UI */}
             {selectedMode === "degen" && (
               <div className="space-y-3 mb-4">
-                <div className="bg-green-900 bg-opacity-50 border-2 border-green-500 p-3 rounded-lg">
-                  <div className="text-green-300 text-xs mb-1">Prize Pool</div>
+                <div className="bg-gray-900 bg-opacity-80 border-2 border-gray-700 p-3 rounded-lg">
+                  <div className="text-gray-400 text-xs mb-1">Prize Pool</div>
                   <div className="text-white text-xl font-bold">
                     {currentPool === "0" && !isWalletConnected ? "Connect wallet to view" : `${currentPool} ETH`}
                   </div>
                 </div>
-                <div className="bg-yellow-900 bg-opacity-50 border-2 border-yellow-500 p-3 rounded-lg">
-                  <div className="text-yellow-300 text-xs mb-1">Entry Fee</div>
+                <div className="bg-gray-900 bg-opacity-80 border-2 border-gray-700 p-3 rounded-lg">
+                  <div className="text-gray-400 text-xs mb-1">Entry Fee</div>
                   <div className="text-white text-xl font-bold">{entryFee} ETH</div>
                 </div>
 
