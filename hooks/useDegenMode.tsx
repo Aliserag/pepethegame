@@ -174,8 +174,13 @@ export default function useDegenMode() {
   const [playerCurrentDayScore, setPlayerCurrentDayScore] = useState<number>(0); // Track player's current score for the day
   const [leaderboard, setLeaderboard] = useState<{ address: string; score: number; multiplier: number; reward: string }[]>([]);
 
-  // Contract address - will be set after deployment
-  const contractAddress = (process.env.NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000") as `0x${string}`;
+  // Contract address - hardcoded as fallback since env vars may not work in production
+  const contractAddress = (
+    process.env.NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS ||
+    "0x806e4d33f36886ca9439f2c407505de936498d0e" // FlowPepeDegen contract on Base Sepolia
+  ) as `0x${string}`;
+
+  console.log("DEGEN Contract Address:", contractAddress);
 
   /**
    * Load initial data
