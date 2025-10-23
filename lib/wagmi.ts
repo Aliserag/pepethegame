@@ -1,4 +1,4 @@
-import { http, createConfig, createConnector } from 'wagmi'
+import { http, createConfig, createConnector, createStorage, noopStorage } from 'wagmi'
 import { base, baseSepolia } from 'wagmi/chains'
 import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector'
 
@@ -125,9 +125,10 @@ export const config = createConfig({
     [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org'),
     [baseSepolia.id]: http(process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org'),
   },
-  // Prevent excessive wallet polling
+  // Prevent auto-reconnection and wallet polling
   ssr: true,
   multiInjectedProviderDiscovery: false,
+  storage: createStorage({ storage: noopStorage }), // Don't persist connections
 })
 
 declare module 'wagmi' {
