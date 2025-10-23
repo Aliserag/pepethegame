@@ -389,9 +389,20 @@ export default function useDegenMode() {
   }, [publicClient, address, contractAddress]);
 
   useEffect(() => {
+    console.log("=== useDegenMode useEffect Triggered ===");
+    console.log("publicClient:", !!publicClient);
+    console.log("address:", address);
+    console.log("contractAddress:", contractAddress);
+
     // Only load data if we have all required dependencies and address just became available
     if (publicClient && address && contractAddress !== "0x0000000000000000000000000000000000000000") {
+      console.log("✅ All conditions met, calling loadData()");
       loadData();
+    } else {
+      console.warn("❌ Conditions not met for loadData:");
+      console.warn("  - publicClient:", !!publicClient);
+      console.warn("  - address:", address);
+      console.warn("  - contractAddress valid:", contractAddress !== "0x0000000000000000000000000000000000000000");
     }
     // Deliberately NOT including loadData to prevent re-runs when publicClient reference changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
