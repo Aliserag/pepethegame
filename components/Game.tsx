@@ -95,6 +95,7 @@ export default function Game() {
   const [showGameOver, setShowGameOver] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [leaderboardRefreshTrigger, setLeaderboardRefreshTrigger] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
 
 
@@ -175,6 +176,8 @@ export default function Game() {
       const success = await submitOnChainScore(finalScore);
       if (success) {
         setScoreSubmitted(true);
+        // Trigger leaderboard refresh after successful submission
+        setLeaderboardRefreshTrigger(prev => prev + 1);
       }
     }
   };
@@ -905,7 +908,7 @@ export default function Game() {
             {/* Leaderboards */}
             {selectedMode === "fun" && (
               <div className="w-full flex justify-center">
-                <Leaderboard />
+                <Leaderboard refreshTrigger={leaderboardRefreshTrigger} />
               </div>
             )}
 

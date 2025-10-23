@@ -9,7 +9,11 @@ interface LeaderboardEntry {
   rank: number;
 }
 
-const Leaderboard: React.FC = () => {
+interface LeaderboardProps {
+  refreshTrigger?: number; // When this changes, refresh the leaderboard
+}
+
+const Leaderboard: React.FC<LeaderboardProps> = ({ refreshTrigger }) => {
   const [topScores, setTopScores] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const publicClient = usePublicClient({ chainId: baseSepolia.id });
@@ -23,6 +27,14 @@ const Leaderboard: React.FC = () => {
     console.log("Public Client:", !!publicClient);
     loadLeaderboard();
   }, []);
+
+  // Auto-refresh when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger !== undefined && refreshTrigger > 0) {
+      console.log("Leaderboard: Auto-refreshing due to trigger change");
+      loadLeaderboard();
+    }
+  }, [refreshTrigger]);
 
   async function loadLeaderboard() {
     if (!publicClient || !contractAddress) {
