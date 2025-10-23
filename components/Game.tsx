@@ -417,20 +417,20 @@ export default function Game() {
             {/* DEGEN Mode specific UI - Below Wallet */}
             {selectedMode === "degen" && (
               <div className="space-y-3 w-full">
-                <div className="bg-gray-900 bg-opacity-80 border-2 border-gray-700 p-3 rounded-lg">
+                <div className="bg-gray-700 p-3 rounded-lg">
                   <div className="text-gray-400 text-xs mb-1">Prize Pool</div>
                   <div className="text-white text-xl font-bold">
                     {currentPool === "0" && !isWalletConnected ? "Connect wallet to view" : `${currentPool} ETH`}
                   </div>
                 </div>
-                <div className="bg-gray-900 bg-opacity-80 border-2 border-gray-700 p-3 rounded-lg">
+                <div className="bg-gray-700 p-3 rounded-lg">
                   <div className="text-gray-400 text-xs mb-1">Entry Fee</div>
                   <div className="text-white text-xl font-bold">{entryFee} ETH</div>
                 </div>
 
                 {/* Claimable Rewards Section */}
                 {isWalletConnected && claimableRewards.length > 0 && (
-                  <div className="bg-gray-900 bg-opacity-80 border-2 border-yellow-500 p-3 rounded-lg relative overflow-hidden">
+                  <div className="bg-gray-700 border-2 border-yellow-500 p-3 rounded-lg relative overflow-hidden">
                     <div className="absolute top-0 right-0 text-4xl opacity-20">💰</div>
                     <div className="relative z-10">
                       <div className="flex items-center justify-center gap-2 mb-2">
