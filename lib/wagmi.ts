@@ -125,6 +125,9 @@ export const config = createConfig({
     [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org'),
     [baseSepolia.id]: http(process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org'),
   },
+  // Prevent excessive wallet polling
+  ssr: true,
+  multiInjectedProviderDiscovery: false,
 })
 
 declare module 'wagmi' {
