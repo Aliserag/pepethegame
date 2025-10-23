@@ -185,7 +185,7 @@ export default function useDegenMode() {
 
     setLoadingStats(true);
 
-    // Helper function to add delay between calls to avoid rate limiting
+    // Helper function to add delay between calls to prevent RPC rate limiting (300ms between each call)
     const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     try {
@@ -197,6 +197,8 @@ export default function useDegenMode() {
       }) as bigint;
       setEntryFee(formatEther(fee));
 
+      await delay(300);
+
       // Get current pool
       const pool = await publicClient.readContract({
         address: contractAddress,
@@ -205,7 +207,7 @@ export default function useDegenMode() {
       }) as bigint;
       setCurrentPool(formatEther(pool));
 
-      await delay(150);
+      await delay(300);
 
       // Get current day
       const day = await publicClient.readContract({
@@ -215,7 +217,7 @@ export default function useDegenMode() {
       }) as bigint;
       setCurrentDay(Number(day));
 
-      await delay(150);
+      await delay(300);
 
       // Check if played today
       const played = await publicClient.readContract({
@@ -226,7 +228,7 @@ export default function useDegenMode() {
       }) as boolean;
       setHasPlayed(played);
 
-      await delay(150);
+      await delay(300);
 
       // Get Hall of Fame (top 10) - handle empty case
       try {
