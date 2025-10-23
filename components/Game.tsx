@@ -372,18 +372,18 @@ export default function Game() {
 
                 {/* Claimable Rewards Section */}
                 {isWalletConnected && claimableRewards.length > 0 && (
-                  <div className="bg-gradient-to-r from-yellow-600 to-amber-600 border-2 border-yellow-400 p-3 rounded-lg relative overflow-hidden">
+                  <div className="bg-gray-900 bg-opacity-80 border-2 border-yellow-500 p-3 rounded-lg relative overflow-hidden">
                     <div className="absolute top-0 right-0 text-4xl opacity-20">💰</div>
                     <div className="relative z-10">
                       <div className="flex items-center justify-center gap-2 mb-2">
                         <span className="text-2xl">🏆</span>
-                        <div className="text-yellow-100 text-xs font-bold">REWARDS AVAILABLE!</div>
+                        <div className="text-yellow-400 text-xs font-bold">REWARDS AVAILABLE!</div>
                         <span className="text-2xl">🏆</span>
                       </div>
-                      <div className="text-white text-lg font-bold text-center mb-2">
+                      <div className="text-yellow-300 text-lg font-bold text-center mb-2">
                         {claimableRewards.reduce((sum, r) => sum + parseFloat(r.amount), 0).toFixed(4)} ETH
                       </div>
-                      <div className="text-yellow-200 text-[10px] text-center mb-3">
+                      <div className="text-gray-400 text-[10px] text-center mb-3">
                         {claimableRewards.length} reward{claimableRewards.length > 1 ? 's' : ''} ready to claim
                       </div>
 
@@ -401,9 +401,9 @@ export default function Game() {
                             disabled={isClaiming}
                             className={`w-full ${
                               isClaiming
-                                ? "bg-gray-600 cursor-not-allowed"
-                                : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                            } text-white font-bold py-2 px-4 rounded-lg text-[10px] transition-all`}
+                                ? "bg-gray-600 cursor-not-allowed text-gray-400"
+                                : "bg-gray-800 hover:bg-gray-700 text-yellow-400 hover:text-yellow-300"
+                            } font-bold py-2 px-4 rounded-lg text-[10px] transition-all border border-gray-700`}
                             style={{ fontFamily: "'Press Start 2P', cursive" }}
                           >
                             {isClaiming ? "Processing..." : `💰 Claim Day ${reward.day}: ${parseFloat(reward.amount).toFixed(4)} ETH`}
@@ -422,9 +422,9 @@ export default function Game() {
                             disabled={isClaiming}
                             className={`w-full ${
                               isClaiming
-                                ? "bg-gray-600 cursor-not-allowed"
-                                : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                            } text-white font-bold py-2 px-4 rounded-lg text-[10px] transition-all animate-pulse`}
+                                ? "bg-gray-600 cursor-not-allowed text-gray-400"
+                                : "bg-gray-800 hover:bg-gray-700 text-yellow-400 hover:text-yellow-300"
+                            } font-bold py-2 px-4 rounded-lg text-[10px] transition-all border border-yellow-600 animate-pulse`}
                             style={{ fontFamily: "'Press Start 2P', cursive" }}
                           >
                             {isClaiming ? "Processing..." : `🎁 Claim All ${claimableRewards.length} Rewards`}
@@ -452,24 +452,10 @@ export default function Game() {
             {selectedMode === "fun" && (
               <button
                 onClick={handleStartClick}
-                className="bg-green-700 hover:bg-green-900 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center text-sm w-full"
+                className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-sm w-full transition-all"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
-                <span className="mr-2">START</span>
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M5 12h14m-7-7v14"
-                  />
-                </svg>
+                🎮 START GAME
               </button>
             )}
 
@@ -479,7 +465,7 @@ export default function Game() {
                   onClick={handleDegenEntry}
                   disabled={isEntering}
                   className={`${
-                    isEntering ? "bg-gray-600 cursor-not-allowed" : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                    isEntering ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
                   } text-white font-bold py-3 px-6 rounded-lg text-sm w-full transition-all`}
                   style={{ fontFamily: "'Press Start 2P', cursive" }}
                 >
@@ -496,7 +482,7 @@ export default function Game() {
             {selectedMode === "degen" && hasEntered && (
               <button
                 onClick={handleStartClick}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3 px-6 rounded-lg text-sm w-full transition-all animate-pulse"
+                className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-sm w-full transition-all animate-pulse"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
                 🎮 START GAME
@@ -530,7 +516,7 @@ export default function Game() {
                   setShowModeSelection(true);
                   setSelectedMode(null);
                 }}
-                className="bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-800 hover:to-gray-700 text-white font-bold py-2 px-4 rounded-lg text-sm w-full transition-all"
+                className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm w-full transition-all"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
                 🏠 Home
@@ -540,7 +526,7 @@ export default function Game() {
               {selectedMode === "degen" && (
                 <button
                   onClick={() => setShowLeaderboardModal(true)}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-all w-full"
+                  className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition-all w-full"
                   style={{ fontFamily: "'Press Start 2P', cursive" }}
                 >
                   🏆 Today's Leaderboard
