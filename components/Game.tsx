@@ -176,6 +176,9 @@ export default function Game() {
       const success = await submitOnChainScore(finalScore);
       if (success) {
         setScoreSubmitted(true);
+        // Update the on-chain score to reflect the new record
+        setCurrentOnChainScore(finalScore);
+        setIsNewHighScore(false); // No longer a new high score after submission
         // Trigger leaderboard refresh after successful submission
         setLeaderboardRefreshTrigger(prev => prev + 1);
       }

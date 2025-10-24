@@ -78,6 +78,16 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ refreshTrigger }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshTrigger]);
 
+  // Auto-refresh every 10 seconds (like DEGEN mode)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log("Leaderboard: Auto-refreshing (10s interval)");
+      loadLeaderboard();
+    }, 10000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function formatAddress(address: string) {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   }
