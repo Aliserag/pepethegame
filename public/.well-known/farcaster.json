@@ -12,9 +12,9 @@
     "homeUrl": "https://www.flowpepe.com",
     "splashImageUrl": "https://www.flowpepe.com/logo.png",
     "splashBackgroundColor": "#ded895",
-    "tagline": "Help Pepe make it on Base!",
-    "description": "WAGMI! Help Pepe make it through red candlestick obstacles and earn points. The ultimate crypto Flappy Bird on Base!",
+    "tagline": "Skill-based arcade game with on-chain rewards on Base",
+    "description": "Play FlowPepe - the viral Flappy Bird game built on Base! Navigate Pepe through red candlestick obstacles, compete on the leaderboard, and earn real ETH rewards in DEGEN Mode. Free Fun Mode or play-to-earn with daily prize pools. WAGMI! 🐸",
     "categories": ["games", "casual"],
-    "tags": ["wagmi", "pepe", "base", "onchain", "game"]
+    "tags": ["wagmi", "pepe", "base", "onchain", "game", "play-to-earn", "arcade", "web3"]
   }
 }
