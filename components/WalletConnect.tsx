@@ -41,33 +41,34 @@ const WalletConnect: React.FC = () => {
 
   console.log("Found Farcaster connector:", farcasterConnector ? { id: farcasterConnector.id, name: farcasterConnector.name } : "NONE");
 
-  // Auto-connect to Farcaster wallet if in Farcaster Mini App
-  useEffect(() => {
-    console.log("Auto-connect check:", {
-      hasFarcasterConnector: !!farcasterConnector,
-      isConnected
-    });
+  // Disabled auto-connect to prevent errors - user must click "Connect Wallet"
+  // useEffect(() => {
+  //   console.log("Auto-connect check:", {
+  //     hasFarcasterConnector: !!farcasterConnector,
+  //     isConnected
+  //   });
 
-    if (farcasterConnector && !isConnected) {
-      console.log("Attempting auto-connect to Farcaster...");
-      connect({ connector: farcasterConnector });
-    }
-  }, [farcasterConnector, isConnected, connect]);
+  //   if (farcasterConnector && !isConnected) {
+  //     console.log("Attempting auto-connect to Farcaster...");
+  //     connect({ connector: farcasterConnector });
+  //   }
+  // }, [farcasterConnector, isConnected, connect]);
 
-  const handleConnect = (connector?: any) => {
+  const handleConnect = async (connector?: any) => {
     console.log("Connect button clicked");
 
     if (connector) {
       // Connect with specific connector
       console.log("Connecting with connector:", connector.id);
-      connect({ connector });
-      setShowConnectorList(false);
-    } else if (farcasterConnector) {
-      // Try Farcaster first
-      console.log("Attempting to connect with Farcaster connector");
-      connect({ connector: farcasterConnector });
+      try {
+        await connect({ connector });
+        setShowConnectorList(false);
+      } catch (err) {
+        console.error("Connection error:", err);
+        // Error will be displayed via the error state from useConnect
+      }
     } else {
-      // Show connector selection modal
+      // Always show connector selection - don't auto-select Farcaster
       console.log("Showing connector list");
       setShowConnectorList(true);
     }
