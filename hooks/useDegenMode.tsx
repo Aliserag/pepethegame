@@ -2,148 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useAccount, usePublicClient, useWalletClient, useSwitchChain } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 import { parseEther, formatEther } from "viem";
-
-// ABI will be added after contract deployment
-const degenAbi = [
-  {
-    "inputs": [],
-    "name": "enterGame",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "uint256", "name": "score", "type": "uint256"}],
-    "name": "submitScore",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "player", "type": "address"}],
-    "name": "hasPlayedToday",
-    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getCurrentPool",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getCurrentDay",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {"internalType": "address", "name": "player", "type": "address"},
-      {"internalType": "uint256", "name": "day", "type": "uint256"}
-    ],
-    "name": "calculateReward",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "uint256", "name": "day", "type": "uint256"}],
-    "name": "claimReward",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "entryFee",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "uint256", "name": "day", "type": "uint256"}],
-    "name": "getDayStats",
-    "outputs": [
-      {"internalType": "uint256", "name": "highScore", "type": "uint256"},
-      {"internalType": "address", "name": "highScorer", "type": "address"},
-      {"internalType": "uint256", "name": "totalPool", "type": "uint256"},
-      {"internalType": "uint256", "name": "totalPlayers", "type": "uint256"},
-      {"internalType": "uint256", "name": "dayStart", "type": "uint256"}
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getMyScore",
-    "outputs": [
-      {"internalType": "uint256", "name": "score", "type": "uint256"},
-      {"internalType": "uint256", "name": "multiplier", "type": "uint256"},
-      {"internalType": "bool", "name": "claimed", "type": "bool"}
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "uint256", "name": "limit", "type": "uint256"}],
-    "name": "getTopEarners",
-    "outputs": [
-      {"internalType": "address[]", "name": "addresses", "type": "address[]"},
-      {"internalType": "uint256[]", "name": "earnings", "type": "uint256[]"}
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {"internalType": "address", "name": "player", "type": "address"},
-      {"internalType": "uint256", "name": "day", "type": "uint256"}
-    ],
-    "name": "getPlayerRank",
-    "outputs": [
-      {"internalType": "uint256", "name": "rank", "type": "uint256"},
-      {"internalType": "uint256", "name": "totalPlayers", "type": "uint256"}
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "player", "type": "address"}],
-    "name": "getClaimableRewards",
-    "outputs": [
-      {"internalType": "uint256[]", "name": "", "type": "uint256[]"},
-      {"internalType": "uint256[]", "name": "", "type": "uint256[]"}
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "name": "lifetimeEarnings",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {"internalType": "uint256", "name": "day", "type": "uint256"},
-      {"internalType": "uint256", "name": "limit", "type": "uint256"}
-    ],
-    "name": "getDayLeaderboard",
-    "outputs": [
-      {"internalType": "address[]", "name": "addresses", "type": "address[]"},
-      {"internalType": "uint256[]", "name": "scores", "type": "uint256[]"},
-      {"internalType": "uint256[]", "name": "multipliers", "type": "uint256[]"},
-      {"internalType": "uint256[]", "name": "rewards", "type": "uint256[]"}
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  }
-] as const;
+import degenAbi from "../lib/FlowPepeDegen.abi.json";
 
 export default function useDegenMode() {
   const { address, isConnected, chain, status } = useAccount();
@@ -174,10 +33,21 @@ export default function useDegenMode() {
   const [playerCurrentDayScore, setPlayerCurrentDayScore] = useState<number>(0); // Track player's current score for the day
   const [leaderboard, setLeaderboard] = useState<{ address: string; score: number; multiplier: number; reward: string }[]>([]);
 
-  // Contract address - hardcoded as fallback since env vars may not work in production
+  // New weight-based system state
+  const [daysUntilMegaSunday, setDaysUntilMegaSunday] = useState<number>(0);
+  const [weeklyMegaPot, setWeeklyMegaPot] = useState<string>("0");
+  const [playerBandInfo, setPlayerBandInfo] = useState<{
+    qualified: boolean;
+    band: number; // 0=none, 1=top 20%, 2=middle 30%, 3=bottom 50%
+    weight: number; // 3, 2, or 1
+    estimatedReward: string;
+  } | null>(null);
+  const [qualifiedCount, setQualifiedCount] = useState<number>(0);
+
+  // Contract address - updated to new weight-based contract
   const contractAddress = (
     process.env.NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS ||
-    "0x806e4d33f36886ca9439f2c407505de936498d0e" // FlowPepeDegen contract on Base Sepolia
+    "0x2bc70abb0ecebd0660429251d9790a712d12ce13" // FlowPepeDegen (weight-based) on Base Sepolia
   ) as `0x${string}`;
 
   console.log("DEGEN Contract Address:", contractAddress);
@@ -382,6 +252,70 @@ export default function useDegenMode() {
       } catch (leaderboardErr) {
         console.error("Error loading leaderboard:", leaderboardErr);
         setLeaderboard([]);
+      }
+
+      // Get days until Mega Sunday
+      try {
+        await delay(300);
+        const daysUntil = await publicClient.readContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "getDaysUntilMegaSunday",
+        }) as bigint;
+        setDaysUntilMegaSunday(Number(daysUntil));
+      } catch (megaErr) {
+        console.error("Error loading Mega Sunday countdown:", megaErr);
+        setDaysUntilMegaSunday(0);
+      }
+
+      // Get weekly mega pot
+      try {
+        await delay(300);
+        const megaPot = await publicClient.readContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "getWeeklyMegaPot",
+        }) as bigint;
+        setWeeklyMegaPot(formatEther(megaPot));
+      } catch (potErr) {
+        console.error("Error loading weekly mega pot:", potErr);
+        setWeeklyMegaPot("0");
+      }
+
+      // Get player's band info for current day
+      try {
+        await delay(300);
+        const bandInfo = await publicClient.readContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "getPlayerBandInfo",
+          args: [address, BigInt(Number(day))],
+        }) as [boolean, bigint, bigint, bigint];
+
+        setPlayerBandInfo({
+          qualified: bandInfo[0],
+          band: Number(bandInfo[1]),
+          weight: Number(bandInfo[2]),
+          estimatedReward: formatEther(bandInfo[3]),
+        });
+      } catch (bandErr) {
+        console.error("Error loading player band info:", bandErr);
+        setPlayerBandInfo(null);
+      }
+
+      // Get qualified count for current day
+      try {
+        await delay(300);
+        const qualified = await publicClient.readContract({
+          address: contractAddress,
+          abi: degenAbi,
+          functionName: "getQualifiedCount",
+          args: [BigInt(Number(day))],
+        }) as bigint;
+        setQualifiedCount(Number(qualified));
+      } catch (qualErr) {
+        console.error("Error loading qualified count:", qualErr);
+        setQualifiedCount(0);
       }
 
       setLoadingStats(false);
@@ -908,6 +842,12 @@ export default function useDegenMode() {
     processingMessage,
     playerCurrentDayScore,
     leaderboard,
+
+    // New weight-based system state
+    daysUntilMegaSunday,
+    weeklyMegaPot,
+    playerBandInfo,
+    qualifiedCount,
 
     // Functions
     enterGame,

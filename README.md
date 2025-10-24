@@ -20,19 +20,28 @@ A Flappy Bird-style game built as a Farcaster Mini App with dual game modes: Fre
 
 ### 💰 DEGEN Mode (Play-to-Earn)
 - **0.002 ETH entry** (~$5 USD per play) ⚠️ **Requires Base Sepolia testnet ETH**
-- **Daily prize pools** with skill-based distribution
-- **Progressive multipliers** - 0.1x increase every 2.5 points (2x faster than Fun Mode)
-- **Real ETH rewards** - Top players split up to 75% of the prize pool
-- **20% rollover** - Unclaimed rewards carry over to build bigger pools
+- **Daily prize pools** with weight-based band distribution
+- **Mega Sunday Events** - Every 7 days, weekly pot added (60-80% larger pools!)
+- **Real ETH rewards** - Top performers get premium 3x weight multipliers
+- **15% daily rollover** + **10% weekly mega pot** = Compounding growth
 - **Unlimited replays** - Keep entering until you get your best score!
 
 **Get Testnet ETH:** [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet)
 
-**Prize Pool Economics:**
-- 95% of entry fees → Prize pool
-- 5% → Creator fee (sustains development)
-- Up to 75% distributed to winners (50% max per player)
-- 20% rolls over daily (compounds growth)
+**Prize Pool Economics (Weight-Based System):**
+- **95%** of entry fees → Prize pool
+- **5%** → Creator fee (sustains development)
+- **75%** distributed to qualified winners (weight-based bands)
+- **15%** rolls over to next day (daily compounding)
+- **10%** contributes to weekly mega pot (Mega Sunday every 7 days)
+
+**Weight-Based Reward Bands:**
+- **Top 20%**: Get 3x weight (premium rewards)
+- **Middle 30%**: Get 2x weight (solid rewards)
+- **Bottom 50%**: Get 1x weight (base rewards)
+- **Qualification**: Must score 80%+ of day's high score
+- **Formula**: `Your Reward = (Your Weight / Total Weights) × 75% of pool`
+- **No max payout cap** - Weight system naturally distributes fairly
 
 ## ✨ Features
 
@@ -80,9 +89,9 @@ A Flappy Bird-style game built as a Farcaster Mini App with dual game modes: Fre
 - **Functions:** submitScore, getScore, getTopScores
 - **Explorer:** [View on BaseScan](https://sepolia.basescan.org/address/0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c)
 
-**FlowPepeDegen (DEGEN Mode)**
-- **Address:** `0x806e4d33f36886ca9439f2c407505de936498d0e`
-- **Purpose:** Daily prize pool, entry fees, reward distribution
+**FlowPepeDegen (DEGEN Mode - Weight-Based System)**
+- **Address:** `0x2bc70abb0ecebd0660429251d9790a712d12ce13`
+- **Purpose:** Daily prize pool with weight-based bands + Weekly Mega Sunday
 - **Key Functions:**
   - `enterGame()` - Pay 0.002 ETH to play
   - `submitScore(uint256 score)` - Record your result
@@ -90,8 +99,12 @@ A Flappy Bird-style game built as a Farcaster Mini App with dual game modes: Fre
   - `claimReward(uint256 day)` - Withdraw winnings
   - `getDayLeaderboard(uint256 day, uint256 limit)` - View rankings
   - `hasPlayedToday(address)` - Check play status
-- **Security:** ReentrancyGuard, Ownable, no arbitrary calls
-- **Explorer:** [View on BaseScan](https://sepolia.basescan.org/address/0x806e4d33f36886ca9439f2c407505de936498d0e)
+  - `getDaysUntilMegaSunday()` - Countdown to next Mega Sunday
+  - `getWeeklyMegaPot()` - View accumulated weekly pot
+  - `getPlayerBandInfo(address, uint256 day)` - View band, weight, estimated reward
+  - `getQualifiedCount(uint256 day)` - Total qualified players
+- **Security:** ReentrancyGuard, Ownable, weight-based math (exact 75% distribution)
+- **Explorer:** [View on BaseScan](https://sepolia.basescan.org/address/0x2bc70abb0ecebd0660429251d9790a712d12ce13)
 
 ### Base Mainnet
 *Ready to deploy - see deployment section below*
