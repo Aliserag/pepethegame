@@ -8,7 +8,8 @@ A Flappy Bird-style game built as a Farcaster Mini App with dual game modes: Fre
 - **Web:** [https://www.flowpepe.com](https://www.flowpepe.com)
 - **Farcaster Mini App:** [Play on Farcaster](https://farcaster.xyz/miniapps/qXKHh0xCCqID/flowpepe)
 
-⚠️ **DEGEN Mode Requirement:** You must have Base Sepolia testnet ETH in your wallet before playing DEGEN Mode. Get free testnet ETH from the [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet).
+⚠️ **Important:** To play DEGEN Mode (prize pools), you need Base Sepolia testnet ETH in your wallet.
+📲 **Get Free Testnet ETH:** [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet) (required for paid mode)
 
 ## 🌟 Game Modes
 
