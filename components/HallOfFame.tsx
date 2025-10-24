@@ -54,9 +54,9 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ hallOfFame, onRefresh }) => {
                     : "bg-gray-800"
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   <span
-                    className={`text-lg font-bold ${
+                    className={`text-lg font-bold flex-shrink-0 ${
                       rank === 1
                         ? "text-yellow-300"
                         : rank === 2
@@ -69,8 +69,8 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ hallOfFame, onRefresh }) => {
                   >
                     #{rank}
                   </span>
-                  <div className="flex flex-col">
-                    <span className="text-sm text-gray-300 font-mono">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm text-gray-300 font-mono truncate">
                       {formatAddress(entry.address)}
                     </span>
                     {rank <= 3 && (
@@ -81,7 +81,7 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ hallOfFame, onRefresh }) => {
                   </div>
                 </div>
                 <span
-                  className="text-green-400 font-bold text-sm"
+                  className="text-green-400 font-bold text-xs ml-2 flex-shrink-0 whitespace-nowrap"
                   style={{ fontFamily: "'Press Start 2P', cursive" }}
                 >
                   {formatEarnings(entry.earnings)}

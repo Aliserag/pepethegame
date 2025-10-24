@@ -118,12 +118,12 @@ const DegenLeaderboard: React.FC<DegenLeaderboardProps> = ({
 
                     {/* Reward */}
                     <div
-                      className={`text-right ${
+                      className={`text-right ml-2 flex-shrink-0 ${
                         isUser ? "text-yellow-300" : "text-green-400"
                       }`}
                     >
                       <div
-                        className="text-sm font-bold"
+                        className="text-xs font-bold whitespace-nowrap"
                         style={{ fontFamily: "'Press Start 2P', cursive" }}
                       >
                         {parseFloat(entry.reward).toFixed(4)}
@@ -164,9 +164,9 @@ const DegenLeaderboard: React.FC<DegenLeaderboardProps> = ({
                   </div>
 
                   {/* Reward */}
-                  <div className="text-right text-yellow-300">
+                  <div className="text-right ml-2 flex-shrink-0 text-yellow-300">
                     <div
-                      className="text-sm font-bold"
+                      className="text-xs font-bold whitespace-nowrap"
                       style={{ fontFamily: "'Press Start 2P', cursive" }}
                     >
                       {parseFloat(userEntry.reward).toFixed(4)}
