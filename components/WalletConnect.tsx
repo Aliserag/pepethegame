@@ -138,7 +138,7 @@ const WalletConnect: React.FC = () => {
 
           {error && (
             <div className="mt-2 text-red-400 text-xs break-words">
-              Error: {error.message}
+              Error: {error?.message || String(error) || 'Connection failed'}
             </div>
           )}
 

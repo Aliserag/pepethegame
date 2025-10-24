@@ -36,11 +36,9 @@ function metaMaskConnector() {
       return parseInt(chainId, 16)
     },
     async isAuthorized() {
-      if (typeof window === 'undefined') return false
-      const provider = (window as any).ethereum
-      if (!provider) return false
-      const accounts = await provider.request({ method: 'eth_accounts' })
-      return accounts.length > 0
+      // Always return false to prevent auto-reconnection
+      // User must explicitly click "Connect Wallet"
+      return false
     },
     async getProvider() {
       if (typeof window === 'undefined') return undefined
