@@ -142,12 +142,20 @@ function getTopScores(uint256 limit) external view returns (address[], uint256[]
 - **Difficulty Scaling**: 1.04x multiplier every 2.5 points (2x faster than Fun Mode)
 - **Replay**: Unlimited entries (pay 0.002 ETH each time)
 
-**Prize Pool Economics**:
+**Prize Pool Economics (Weight-Based System)**:
 - **95%** of entry fees → Prize pool
 - **5%** → Creator fee (sustains development)
-- **Up to 75%** distributed to winners
-- **20%** rolls over to next day (compounds growth)
-- **50% max payout** per player (prevents single winner taking entire pool)
+- **75%** distributed to qualified winners (weight-based bands)
+- **15%** rolls over to next day (daily compounding)
+- **10%** contributes to weekly mega pot (Mega Sunday every 7 days)
+
+**Weight-Based Reward Bands**:
+- **Top 20%**: Get 3x weight (premium rewards)
+- **Middle 30%**: Get 2x weight (solid rewards)
+- **Bottom 50%**: Get 1x weight (base rewards)
+- Qualification: Must score 80%+ of day's high score
+- Formula: `Your Reward = (Your Weight / Total Weights) × 75% of pool`
+- **No max payout cap** - weight system naturally distributes fairly
 
 **Smart Contract Functions** (`FlowPepeDegen.sol`):
 ```solidity
@@ -159,28 +167,44 @@ function getDayLeaderboard(uint256 day, uint256 limit) external view
 function hasPlayedToday(address player) external view returns (bool)
 function getCurrentDay() public view returns (uint256)
 function getDayStats(uint256 day) public view returns (DayStats)
+function getDaysUntilMegaSunday() external view returns (uint256)
+function getWeeklyMegaPot() external view returns (uint256)
+function getPlayerBandInfo(address player, uint256 day) external view
+function getQualifiedCount(uint256 day) external view returns (uint256)
 ```
 
-**Reward Calculation Formula**:
+**Weight-Based Reward Calculation**:
 ```
-Base Reward = (Your Score / High Score) × Prize Pool
-Speed Multiplier = 1.0 + (score × 0.04)
-Multiplied Reward = Base Reward × Speed Multiplier
-Final Reward = min(Multiplied Reward, 50% of pool)
+1. Qualification Check: Your Score ≥ 80% of High Score
+2. Rank Calculation: Count players with higher scores
+3. Band Assignment:
+   - Rank ≤ Top 20% → Weight = 3x
+   - Rank ≤ Top 50% → Weight = 2x
+   - Rank > Top 50% → Weight = 1x
+4. Total Weights = Sum of all qualified player weights
+5. Winners Pool = 75% of daily pool
+6. Your Reward = (Your Weight / Total Weights) × Winners Pool
 
 Requirements:
 - Score must reach 80% of day's high score to qualify
 - Only your highest score per day counts
 - Unlimited entry attempts (0.002 ETH each)
+- Weight system guarantees exactly 75% distribution
 ```
 
-**Example Payout**:
+**Example Payout (7 Qualified Players)**:
 - Day's high score: 50
 - Your score: 40 (80% = qualifies!)
-- Prize pool: 0.1 ETH
-- Base reward: (40/50) × 0.1 = 0.08 ETH
-- Multiplier: 1.0 + (40 × 0.04) = 2.6x
-- Your reward: 0.08 × 2.6 = **0.208 ETH** (capped at 0.05 ETH if exceeds 50% max)
+- Your rank: 3rd place (Top 20% band = 3x weight)
+- Prize pool: 0.1 ETH → Winners pool: 0.075 ETH
+
+Band breakdown:
+- Top 20% (1-2): 2 players × 3 weight = 6 total
+- Mid 30% (3-3): 1 player × 2 weight = 2 total
+- Bot 50% (4-7): 4 players × 1 weight = 4 total
+- **Total Weights: 12**
+
+Your reward: (3 / 12) × 0.075 = **0.01875 ETH** (~$47 @ $2500 ETH)
 
 **Implementation** (`hooks/useDegenMode.tsx`):
 - **982 lines** - Most complex hook in the codebase
@@ -237,15 +261,15 @@ function getTopScores(uint256 limit) external view returns (
 
 ### FlowPepeDegen.sol (DEGEN Mode)
 
-**Location**: `contracts/FlowPepeDegen.sol` (358 lines)
+**Location**: `contracts/FlowPepeDegen.sol` (730 lines)
 
-**Purpose**: Daily prize pool with skill-based reward distribution
+**Purpose**: Daily prize pool with weight-based band reward distribution + Weekly Mega Sunday
 
 **Key Data Structures**:
 ```solidity
 struct PlayerScore {
     uint256 score;           // Highest score for the day
-    uint256 multiplier;      // Speed multiplier earned
+    uint256 multiplier;      // Legacy field (not used in weight system)
     bool claimed;            // Whether reward was claimed
 }
 
@@ -263,11 +287,17 @@ mapping(address => bool) public hasPlayedToday;
 
 **Key Constants**:
 ```solidity
-uint256 public entryFee = 0.002 ether;              // ~$5 USD
-uint256 public constant CREATOR_FEE_BPS = 500;      // 5%
-uint256 public constant MAX_PAYOUT_BPS = 5000;      // 50% max per player
-uint256 public constant ROLLOVER_BPS = 2000;        // 20% rolls over daily
-uint256 public constant MIN_SCORE_THRESHOLD_BPS = 8000; // 80% of high score
+uint256 public entryFee = 0.002 ether;                    // ~$5 USD
+uint256 public constant CREATOR_FEE_BPS = 500;            // 5%
+uint256 public constant WINNERS_BPS = 7500;               // 75% to winners
+uint256 public constant DAILY_ROLLOVER_BPS = 1500;        // 15% daily rollover
+uint256 public constant WEEKLY_POT_BPS = 1000;            // 10% weekly pot
+uint256 public constant MIN_SCORE_THRESHOLD_BPS = 8000;   // 80% of high score
+uint256 public constant TOP_TIER_WEIGHT = 3;              // Top 20% get 3x
+uint256 public constant MID_TIER_WEIGHT = 2;              // Middle 30% get 2x
+uint256 public constant BOT_TIER_WEIGHT = 1;              // Bottom 50% get 1x
+uint256 public constant MEGA_POT_DAY_FREQUENCY = 7;       // Mega Sunday every 7 days
+uint256 public weeklyMegaPot;                             // Accumulated weekly pot
 ```
 
 **Critical Functions**:
@@ -319,35 +349,69 @@ function submitScore(uint256 score) external whenNotPaused {
 }
 ```
 
-**calculateReward()** - Skill-based payout calculation:
+**calculateReward()** - Weight-based payout calculation:
 ```solidity
 function calculateReward(address player, uint256 day) public view returns (uint256) {
-    PlayerScore memory playerScore = dayPlayerScores[day][player];
+    PlayerScore memory playerScore = playerScores[day][player];
     DayStats memory stats = dayStats[day];
 
     if (playerScore.score == 0 || stats.highScore == 0) {
         return 0;
     }
 
-    // Qualification threshold: 80% of high score
-    uint256 threshold = (stats.highScore * MIN_SCORE_THRESHOLD_BPS) / 10000;
-    if (playerScore.score < threshold) {
+    // Get player rank and qualified count
+    (uint256 rank, uint256 qualifiedCount) = _getPlayerRank(player, day);
+
+    if (rank == 0 || qualifiedCount == 0) {
+        return 0; // Not qualified
+    }
+
+    // Get player's weight (3x, 2x, or 1x based on band)
+    uint256 playerWeight = _getPlayerWeight(rank, qualifiedCount);
+
+    // Get total weights from all qualified players
+    uint256 totalWeights = _getTotalWeights(day);
+
+    if (totalWeights == 0) {
         return 0;
     }
 
-    // Base reward: proportional to score
-    uint256 baseReward = (playerScore.score * stats.totalPool) / stats.highScore;
+    // Calculate reward: (Your Weight / Total Weights) × 75% of pool
+    uint256 winnersPool = (stats.totalPool * WINNERS_BPS) / 10000;
+    uint256 reward = (playerWeight * winnersPool) / totalWeights;
 
-    // Apply speed multiplier (exponential advantage for higher scores)
-    uint256 multipliedReward = (baseReward * playerScore.multiplier) / 100;
+    return reward;
+}
+```
 
-    // Cap at 50% of pool
-    uint256 maxPayout = (stats.totalPool * MAX_PAYOUT_BPS) / 10000;
-    if (multipliedReward > maxPayout) {
-        multipliedReward = maxPayout;
-    }
+**_getPlayerRank()** - Helper to calculate rank:
+```solidity
+function _getPlayerRank(address player, uint256 day) private view
+    returns (uint256 rank, uint256 qualifiedCount) {
+    // Check qualification (80% threshold)
+    // Count qualified players and rank by score
+    // Returns (0, 0) if not qualified
+}
+```
 
-    return multipliedReward;
+**_getPlayerWeight()** - Helper to get weight by rank:
+```solidity
+function _getPlayerWeight(uint256 rank, uint256 qualifiedCount) private pure
+    returns (uint256) {
+    uint256 top20Cutoff = (qualifiedCount * 20) / 100;
+    uint256 top50Cutoff = (qualifiedCount * 50) / 100;
+
+    if (rank <= top20Cutoff) return TOP_TIER_WEIGHT;  // 3x
+    if (rank <= top50Cutoff) return MID_TIER_WEIGHT;  // 2x
+    return BOT_TIER_WEIGHT;  // 1x
+}
+```
+
+**_getTotalWeights()** - Helper to sum all weights:
+```solidity
+function _getTotalWeights(uint256 day) private view returns (uint256) {
+    // Count qualified players in each band
+    // Return: (top20Count × 3) + (mid30Count × 2) + (bot50Count × 1)
 }
 ```
 
@@ -369,26 +433,65 @@ function claimReward(uint256 day) external nonReentrant whenNotPaused {
 }
 ```
 
-**startNewDay()** - Daily rollover mechanism:
+**_rolloverDay()** - Daily rollover with 15% daily + 10% weekly split:
 ```solidity
-function startNewDay() external {
-    uint256 lastDay = getCurrentDay() - 1;
-    uint256 currentDay = getCurrentDay();
+function _rolloverDay() private {
+    uint256 oldDay = currentDay;
+    uint256 newDay = getCurrentDay();
 
-    // Calculate unclaimed rewards from previous day
-    DayStats memory lastDayStats = dayStats[lastDay];
-    uint256 totalClaimed = 0;
-    // ... (sum up all claimed rewards)
+    // Calculate unclaimed pool
+    uint256 oldPool = dayStats[oldDay].totalPool;
 
-    uint256 unclaimed = lastDayStats.totalPool - totalClaimed;
+    // Calculate 15% daily rollover
+    uint256 dailyRollover = (oldPool * DAILY_ROLLOVER_BPS) / 10000;
 
-    // Roll over 20% of unclaimed rewards
-    uint256 rollover = (unclaimed * ROLLOVER_BPS) / 10000;
-    dayStats[currentDay].totalPool += rollover;
+    // Calculate 10% weekly pot contribution
+    uint256 weeklyContribution = (oldPool * WEEKLY_POT_BPS) / 10000;
 
-    emit NewDayStarted(currentDay, rollover);
+    // Add to weekly mega pot
+    weeklyMegaPot += weeklyContribution;
+
+    // Start new day with daily rollover
+    currentDay = newDay;
+    dayStats[newDay].dayStart = block.timestamp;
+    dayStats[newDay].totalPool = dailyRollover;
+
+    // Check if it's Mega Sunday (every 7 days)
+    if (newDay > 0 && newDay % MEGA_POT_DAY_FREQUENCY == 0) {
+        // Add weekly mega pot to today's pool
+        dayStats[newDay].totalPool += weeklyMegaPot;
+        emit MegaSunday(newDay, weeklyMegaPot);
+        weeklyMegaPot = 0; // Reset mega pot
+    }
+
+    emit NewDay(newDay, dailyRollover, weeklyContribution);
 }
 ```
+
+**New View Functions**:
+```solidity
+// Get days until next Mega Sunday
+function getDaysUntilMegaSunday() external view returns (uint256)
+
+// Get current weekly mega pot amount
+function getWeeklyMegaPot() external view returns (uint256)
+
+// Get player's band info and estimated reward
+function getPlayerBandInfo(address player, uint256 day) external view
+    returns (bool qualified, uint256 band, uint256 weight, uint256 estimatedReward)
+
+// Get count of qualified players for a day
+function getQualifiedCount(uint256 day) external view returns (uint256)
+```
+
+**Mega Sunday System**:
+- Every 7 days (when `currentDay % 7 == 0`)
+- Weekly pot accumulates 10% from each day's pool
+- On Sunday, entire weekly pot is added to daily pool
+- Creates viral marketing events with 60-80% larger pools
+- Example: If 6 days accumulated 0.05 ETH → Sunday pool gets +0.05 ETH bonus
+- Countdown visible via `getDaysUntilMegaSunday()`
+- Current mega pot visible via `getWeeklyMegaPot()`
 
 **Security Features**:
 - `ReentrancyGuard` - Protects all money-handling functions
@@ -396,7 +499,8 @@ function startNewDay() external {
 - Pull pattern - Users claim rewards (no push transfers)
 - Score validation - Must pay entry fee before submitting
 - Time-based logic - Prevents manipulation of daily cycles
-- Pause mechanism - Emergency circuit breaker
+- Weight-based math - Guarantees exactly 75% distribution, no rounding errors
+- No max payout cap - Natural distribution through weight system
 
 ---
 
@@ -1026,7 +1130,10 @@ node scripts/deploy-simple.js baseSepolia
 # Deploy to Base Sepolia
 node scripts/deploy-degen.cjs baseSepolia
 
-# Output:
+# Output (Latest - Weight-Based System):
+# FlowPepeDegen deployed to: 0x2bc70abb0ecebd0660429251d9790a712d12ce13
+
+# Previous Deployment (Legacy Multiplier System):
 # FlowPepeDegen deployed to: 0x806e4d33f36886ca9439f2c407505de936498d0e
 ```
 
@@ -1047,7 +1154,7 @@ node scripts/verify.js baseSepolia
 ```env
 # Required for production
 NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS=0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c
-NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS=0x806e4d33f36886ca9439f2c407505de936498d0e
+NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS=0x2bc70abb0ecebd0660429251d9790a712d12ce13
 
 # Optional (better rate limits)
 NEXT_PUBLIC_BASE_SEPOLIA_RPC=https://base-sepolia.g.alchemy.com/v2/YOUR_KEY

@@ -13,9 +13,19 @@ contract FlowPepeDegen is Ownable, ReentrancyGuard {
     // Entry fee: $5 USD in ETH (will be converted based on oracle)
     uint256 public entryFee = 0.002 ether; // ~$5 at $2500 ETH
     uint256 public constant CREATOR_FEE_BPS = 500; // 5%
-    uint256 public constant MAX_PAYOUT_BPS = 5000; // 50% of pool
-    uint256 public constant ROLLOVER_BPS = 2000; // 20% rolls over daily
+    uint256 public constant WINNERS_BPS = 7500; // 75% to winners
+    uint256 public constant DAILY_ROLLOVER_BPS = 1500; // 15% daily rollover
+    uint256 public constant WEEKLY_POT_BPS = 1000; // 10% weekly pot
     uint256 public constant MIN_SCORE_THRESHOLD_BPS = 8000; // 80% of high score
+
+    // Weight-based distribution
+    uint256 public constant TOP_TIER_WEIGHT = 3; // Top 20% get 3x weight
+    uint256 public constant MID_TIER_WEIGHT = 2; // Middle 30% get 2x weight
+    uint256 public constant BOT_TIER_WEIGHT = 1; // Bottom 50% get 1x weight
+
+    // Weekly mega-pot
+    uint256 public weeklyMegaPot;
+    uint256 public constant MEGA_POT_DAY_FREQUENCY = 7; // Every 7 days (Sunday)
 
     struct DayStats {
         uint256 highScore;
@@ -57,7 +67,8 @@ contract FlowPepeDegen is Ownable, ReentrancyGuard {
 
     event GamePlayed(address indexed player, uint256 day, uint256 score, uint256 multiplier);
     event RewardClaimed(address indexed player, uint256 day, uint256 amount);
-    event NewDay(uint256 day, uint256 rolloverAmount);
+    event NewDay(uint256 day, uint256 dailyRollover, uint256 weeklyContribution);
+    event MegaSunday(uint256 day, uint256 megaPotAmount);
     event EntryFeeUpdated(uint256 newFee);
     event HallOfFameUpdated(address indexed player, uint256 totalEarnings);
 
@@ -161,7 +172,127 @@ contract FlowPepeDegen is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Calculate potential reward for a player
+     * @notice Get player's rank and total qualified players for a day
+     * @return rank Player's rank (1-indexed), 0 if not qualified
+     * @return qualifiedCount Total number of qualified players
+     */
+    function _getPlayerRank(address player, uint256 day) private view returns (uint256 rank, uint256 qualifiedCount) {
+        PlayerScore memory ps = playerScores[day][player];
+        DayStats memory stats = dayStats[day];
+
+        if (ps.score == 0 || stats.highScore == 0) {
+            return (0, 0);
+        }
+
+        // Check if player qualifies (80% threshold)
+        uint256 threshold = (stats.highScore * MIN_SCORE_THRESHOLD_BPS) / 10000;
+        if (ps.score < threshold) {
+            return (0, 0);
+        }
+
+        // Get all players for the day and count qualified
+        address[] memory players = dayPlayers[day];
+        uint256 count = players.length;
+
+        rank = 1;
+        qualifiedCount = 0;
+
+        for (uint256 i = 0; i < count; i++) {
+            address currentPlayer = players[i];
+            uint256 currentScore = playerScores[day][currentPlayer].score;
+
+            // Check if this player qualifies
+            if (currentScore >= threshold) {
+                qualifiedCount++;
+
+                // Count how many qualified players have higher scores
+                if (currentScore > ps.score) {
+                    rank++;
+                }
+            }
+        }
+
+        return (rank, qualifiedCount);
+    }
+
+    /**
+     * @notice Get weight for a player based on their rank
+     * @param rank Player's rank (1-indexed)
+     * @param qualifiedCount Total qualified players
+     * @return weight 3x, 2x, or 1x
+     */
+    function _getPlayerWeight(uint256 rank, uint256 qualifiedCount) private pure returns (uint256) {
+        if (qualifiedCount == 0) {
+            return 0;
+        }
+
+        // Calculate band cutoffs
+        uint256 top20Cutoff = (qualifiedCount * 20) / 100;
+        if (top20Cutoff == 0) top20Cutoff = 1;
+
+        uint256 top50Cutoff = (qualifiedCount * 50) / 100;
+        if (top50Cutoff == 0) top50Cutoff = 1;
+
+        // Assign weight based on band
+        if (rank <= top20Cutoff) {
+            return TOP_TIER_WEIGHT; // 3x
+        } else if (rank <= top50Cutoff) {
+            return MID_TIER_WEIGHT; // 2x
+        } else {
+            return BOT_TIER_WEIGHT; // 1x
+        }
+    }
+
+    /**
+     * @notice Calculate total weights for all qualified players
+     * @param day Day number
+     * @return totalWeights Sum of all qualified player weights
+     */
+    function _getTotalWeights(uint256 day) private view returns (uint256 totalWeights) {
+        DayStats memory stats = dayStats[day];
+
+        if (stats.highScore == 0) {
+            return 0;
+        }
+
+        uint256 threshold = (stats.highScore * MIN_SCORE_THRESHOLD_BPS) / 10000;
+        address[] memory players = dayPlayers[day];
+        uint256 count = players.length;
+
+        // First pass: count qualified players and build sorted list
+        uint256 qualifiedCount = 0;
+        for (uint256 i = 0; i < count; i++) {
+            if (playerScores[day][players[i]].score >= threshold) {
+                qualifiedCount++;
+            }
+        }
+
+        if (qualifiedCount == 0) {
+            return 0;
+        }
+
+        // Calculate band cutoffs
+        uint256 top20Cutoff = (qualifiedCount * 20) / 100;
+        if (top20Cutoff == 0) top20Cutoff = 1;
+
+        uint256 top50Cutoff = (qualifiedCount * 50) / 100;
+        if (top50Cutoff == 0) top50Cutoff = 1;
+
+        // Calculate counts for each band
+        uint256 top20Count = top20Cutoff;
+        uint256 mid30Count = top50Cutoff - top20Cutoff;
+        uint256 bot50Count = qualifiedCount - top50Cutoff;
+
+        // Calculate total weights
+        totalWeights = (top20Count * TOP_TIER_WEIGHT) +
+                       (mid30Count * MID_TIER_WEIGHT) +
+                       (bot50Count * BOT_TIER_WEIGHT);
+
+        return totalWeights;
+    }
+
+    /**
+     * @notice Calculate potential reward for a player using weight-based distribution
      */
     function calculateReward(address player, uint256 day) public view returns (uint256) {
         PlayerScore memory playerScore = playerScores[day][player];
@@ -171,25 +302,28 @@ contract FlowPepeDegen is Ownable, ReentrancyGuard {
             return 0;
         }
 
-        // Must reach 80% of high score to earn
-        uint256 threshold = (stats.highScore * MIN_SCORE_THRESHOLD_BPS) / 10000;
-        if (playerScore.score < threshold) {
+        // Get player rank and qualified count
+        (uint256 rank, uint256 qualifiedCount) = _getPlayerRank(player, day);
+
+        if (rank == 0 || qualifiedCount == 0) {
+            return 0; // Not qualified
+        }
+
+        // Get player's weight
+        uint256 playerWeight = _getPlayerWeight(rank, qualifiedCount);
+
+        // Get total weights
+        uint256 totalWeights = _getTotalWeights(day);
+
+        if (totalWeights == 0) {
             return 0;
         }
 
-        // Base reward: (Your Score / High Score) × Pool
-        uint256 baseReward = (playerScore.score * stats.totalPool) / stats.highScore;
+        // Calculate reward: (Your Weight / Total Weights) × 75% of pool
+        uint256 winnersPool = (stats.totalPool * WINNERS_BPS) / 10000;
+        uint256 reward = (playerWeight * winnersPool) / totalWeights;
 
-        // Apply speed multiplier
-        uint256 multipliedReward = (baseReward * playerScore.multiplier) / 100;
-
-        // Cap at 50% of pool
-        uint256 maxPayout = (stats.totalPool * MAX_PAYOUT_BPS) / 10000;
-        if (multipliedReward > maxPayout) {
-            multipliedReward = maxPayout;
-        }
-
-        return multipliedReward;
+        return reward;
     }
 
     /**
@@ -221,21 +355,38 @@ contract FlowPepeDegen is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Rollover to new day
+     * @notice Rollover to new day with 15% daily + 10% weekly split
      */
     function _rolloverDay() private {
         uint256 oldDay = currentDay;
         uint256 newDay = getCurrentDay();
 
-        // Calculate rollover amount (20% of unclaimed pool)
-        uint256 rolloverAmount = (dayStats[oldDay].totalPool * ROLLOVER_BPS) / 10000;
+        // Calculate unclaimed pool
+        uint256 oldPool = dayStats[oldDay].totalPool;
 
-        // Start new day
+        // Calculate 15% daily rollover
+        uint256 dailyRollover = (oldPool * DAILY_ROLLOVER_BPS) / 10000;
+
+        // Calculate 10% weekly pot
+        uint256 weeklyContribution = (oldPool * WEEKLY_POT_BPS) / 10000;
+
+        // Add to weekly mega pot
+        weeklyMegaPot += weeklyContribution;
+
+        // Start new day with daily rollover
         currentDay = newDay;
         dayStats[newDay].dayStart = block.timestamp;
-        dayStats[newDay].totalPool = rolloverAmount;
+        dayStats[newDay].totalPool = dailyRollover;
 
-        emit NewDay(newDay, rolloverAmount);
+        // Check if it's Mega Sunday (every 7 days)
+        if (newDay > 0 && newDay % MEGA_POT_DAY_FREQUENCY == 0) {
+            // Add weekly mega pot to today's pool
+            dayStats[newDay].totalPool += weeklyMegaPot;
+            emit MegaSunday(newDay, weeklyMegaPot);
+            weeklyMegaPot = 0; // Reset mega pot
+        }
+
+        emit NewDay(newDay, dailyRollover, weeklyContribution);
     }
 
     /**
@@ -489,6 +640,89 @@ contract FlowPepeDegen is Ownable, ReentrancyGuard {
         }
 
         return (claimableDays, claimableRewards);
+    }
+
+    /**
+     * @notice Get days until next Mega Sunday
+     */
+    function getDaysUntilMegaSunday() external view returns (uint256) {
+        uint256 day = getCurrentDay();
+        uint256 nextMegaDay = ((day / MEGA_POT_DAY_FREQUENCY) + 1) * MEGA_POT_DAY_FREQUENCY;
+        return nextMegaDay - day;
+    }
+
+    /**
+     * @notice Get current weekly mega pot amount
+     */
+    function getWeeklyMegaPot() external view returns (uint256) {
+        return weeklyMegaPot;
+    }
+
+    /**
+     * @notice Get player's band info for a specific day
+     * @param player Player address
+     * @param day Day number
+     * @return qualified Whether player qualifies for rewards
+     * @return band Player's band (0=none, 1=top 20%, 2=middle 30%, 3=bottom 50%)
+     * @return weight Player's weight (3, 2, or 1)
+     * @return estimatedReward Estimated reward amount
+     */
+    function getPlayerBandInfo(address player, uint256 day) external view returns (
+        bool qualified,
+        uint256 band,
+        uint256 weight,
+        uint256 estimatedReward
+    ) {
+        (uint256 rank, uint256 qualifiedCount) = _getPlayerRank(player, day);
+
+        if (rank == 0 || qualifiedCount == 0) {
+            return (false, 0, 0, 0);
+        }
+
+        qualified = true;
+        weight = _getPlayerWeight(rank, qualifiedCount);
+        estimatedReward = this.calculateReward(player, day);
+
+        // Determine band
+        uint256 top20Cutoff = (qualifiedCount * 20) / 100;
+        if (top20Cutoff == 0) top20Cutoff = 1;
+
+        uint256 top50Cutoff = (qualifiedCount * 50) / 100;
+        if (top50Cutoff == 0) top50Cutoff = 1;
+
+        if (rank <= top20Cutoff) {
+            band = 1; // Top 20%
+        } else if (rank <= top50Cutoff) {
+            band = 2; // Middle 30%
+        } else {
+            band = 3; // Bottom 50%
+        }
+
+        return (qualified, band, weight, estimatedReward);
+    }
+
+    /**
+     * @notice Get qualified player count for a day
+     */
+    function getQualifiedCount(uint256 day) external view returns (uint256) {
+        DayStats memory stats = dayStats[day];
+
+        if (stats.highScore == 0) {
+            return 0;
+        }
+
+        uint256 threshold = (stats.highScore * MIN_SCORE_THRESHOLD_BPS) / 10000;
+        address[] memory players = dayPlayers[day];
+        uint256 count = players.length;
+        uint256 qualifiedCount = 0;
+
+        for (uint256 i = 0; i < count; i++) {
+            if (playerScores[day][players[i]].score >= threshold) {
+                qualifiedCount++;
+            }
+        }
+
+        return qualifiedCount;
     }
 
     receive() external payable {}

@@ -106,7 +106,32 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "rolloverAmount",
+        "name": "megaPotAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "MegaSunday",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "day",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "dailyRollover",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "weeklyContribution",
         "type": "uint256"
       }
     ],
@@ -159,6 +184,19 @@
   },
   {
     "inputs": [],
+    "name": "BOT_TIER_WEIGHT",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "CREATOR_FEE_BPS",
     "outputs": [
       {
@@ -172,7 +210,33 @@
   },
   {
     "inputs": [],
-    "name": "MAX_PAYOUT_BPS",
+    "name": "DAILY_ROLLOVER_BPS",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MEGA_POT_DAY_FREQUENCY",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MID_TIER_WEIGHT",
     "outputs": [
       {
         "internalType": "uint256",
@@ -198,7 +262,33 @@
   },
   {
     "inputs": [],
-    "name": "ROLLOVER_BPS",
+    "name": "TOP_TIER_WEIGHT",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "WEEKLY_POT_BPS",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "WINNERS_BPS",
     "outputs": [
       {
         "internalType": "uint256",
@@ -493,6 +583,19 @@
   },
   {
     "inputs": [],
+    "name": "getDaysUntilMegaSunday",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "getMyScore",
     "outputs": [
       {
@@ -509,6 +612,45 @@
         "internalType": "bool",
         "name": "claimed",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "day",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPlayerBandInfo",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "qualified",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "band",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "weight",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "estimatedReward",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -547,6 +689,25 @@
     "inputs": [
       {
         "internalType": "uint256",
+        "name": "day",
+        "type": "uint256"
+      }
+    ],
+    "name": "getQualifiedCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
         "name": "limit",
         "type": "uint256"
       }
@@ -562,6 +723,19 @@
         "internalType": "uint256[]",
         "name": "earnings",
         "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getWeeklyMegaPot",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -725,6 +899,19 @@
     "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "weeklyMegaPot",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
