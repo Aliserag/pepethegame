@@ -1,14 +1,14 @@
 import { useState, useCallback, useEffect } from "react";
 import { useAccount, usePublicClient, useWalletClient, useSwitchChain } from "wagmi";
-import { flowTestnet } from "wagmi/chains";
+import { flowMainnet } from "wagmi/chains";
 import { parseEther, formatEther } from "viem";
 import degenAbi from "../lib/FlowPepeDegen.abi.json";
 
 export default function useDegenMode() {
   const { address, isConnected, chain, status } = useAccount();
-  const publicClient = usePublicClient({ chainId: flowTestnet.id });
+  const publicClient = usePublicClient({ chainId: flowMainnet.id });
   const { data: walletClient, refetch: refetchWalletClient } = useWalletClient({
-    chainId: flowTestnet.id
+    chainId: flowMainnet.id
   });
   const { switchChainAsync } = useSwitchChain();
 
@@ -44,10 +44,10 @@ export default function useDegenMode() {
   } | null>(null);
   const [qualifiedCount, setQualifiedCount] = useState<number>(0);
 
-  // Contract address - for Flow Testnet (to be deployed)
+  // Contract address - Flow Mainnet
   const contractAddress = (
     process.env.NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS ||
-    "" // FlowPepeDegen on Flow Testnet
+    "" // FlowPepeDegen on Flow Mainnet
   ) as `0x${string}`;
 
   console.log("DEGEN Contract Address:", contractAddress);
@@ -372,12 +372,12 @@ export default function useDegenMode() {
       }
 
       // 2. Check if we need to switch chains
-      if (chain?.id !== flowTestnet.id) {
-        setProcessingMessage("Switching to Flow Testnet network...");
-        console.log(`Current chain: ${chain?.id}, switching to Flow Testnet (${flowTestnet.id})`);
+      if (chain?.id !== flowMainnet.id) {
+        setProcessingMessage("Switching to Flow Mainnet network...");
+        console.log(`Current chain: ${chain?.id}, switching to Flow Mainnet (${flowMainnet.id})`);
 
         try {
-          await switchChainAsync({ chainId: flowTestnet.id });
+          await switchChainAsync({ chainId: flowMainnet.id });
 
           // 3. Refetch wallet client to get updated client for new chain
           setProcessingMessage("Verifying network switch...");
@@ -388,9 +388,9 @@ export default function useDegenMode() {
           for (let i = 0; i < 30; i++) { // 3 seconds max (30 * 100ms)
             await new Promise(resolve => setTimeout(resolve, 100));
             const { data: freshClient } = await refetchWalletClient();
-            if (freshClient?.chain?.id === flowTestnet.id) {
+            if (freshClient?.chain?.id === flowMainnet.id) {
               chainSwitched = true;
-              console.log("✅ Wallet client confirmed on Flow Testnet");
+              console.log("✅ Wallet client confirmed on Flow Mainnet");
               break;
             }
           }
@@ -409,7 +409,7 @@ export default function useDegenMode() {
           if (switchErr.message?.includes("rejected") || switchErr.message?.includes("User rejected")) {
             setError("Network switch cancelled");
           } else {
-            setError("Failed to switch to Flow Testnet network. Please switch manually.");
+            setError("Failed to switch to Flow Mainnet network. Please switch manually.");
           }
           setIsEntering(false);
           setProcessingMessage(null);
@@ -428,8 +428,8 @@ export default function useDegenMode() {
       }
 
       // 6. Verify we're on the correct chain before transaction
-      if (freshWalletClient.chain?.id !== flowTestnet.id) {
-        setError(`Chain mismatch detected (on ${freshWalletClient.chain?.id}, expected ${flowTestnet.id}). Please try again.`);
+      if (freshWalletClient.chain?.id !== flowMainnet.id) {
+        setError(`Chain mismatch detected (on ${freshWalletClient.chain?.id}, expected ${flowMainnet.id}). Please try again.`);
         setIsEntering(false);
         setProcessingMessage(null);
         return false;
@@ -450,7 +450,7 @@ export default function useDegenMode() {
         abi: degenAbi,
         functionName: "enterGame",
         value: fee,
-        chain: flowTestnet,
+        chain: flowMainnet,
       });
 
       setProcessingMessage("Confirm transaction in wallet...");
@@ -489,7 +489,7 @@ export default function useDegenMode() {
       } else if (err.message?.includes("insufficient funds")) {
         setError("Insufficient FLOW balance");
       } else if (err.message?.includes("Chain")) {
-        setError("Network error. Please ensure you're on Flow Testnet and try again.");
+        setError("Network error. Please ensure you're on Flow Mainnet and try again.");
       } else {
         setError(`Failed to enter game: ${err.message || "Unknown error"}`);
       }
@@ -528,8 +528,8 @@ export default function useDegenMode() {
       }
 
       // 2. Verify we're on the correct chain
-      if (freshWalletClient.chain?.id !== flowTestnet.id) {
-        setError(`Chain mismatch detected. Please switch to Flow Testnet and try again.`);
+      if (freshWalletClient.chain?.id !== flowMainnet.id) {
+        setError(`Chain mismatch detected. Please switch to Flow Mainnet and try again.`);
         setIsSubmitting(false);
         setProcessingMessage(null);
         return false;
@@ -544,7 +544,7 @@ export default function useDegenMode() {
         abi: degenAbi,
         functionName: "submitScore",
         args: [BigInt(score)],
-        chain: flowTestnet,
+        chain: flowMainnet,
       });
 
       setProcessingMessage("Confirm transaction in wallet...");
@@ -585,7 +585,7 @@ export default function useDegenMode() {
       } else if (err.message?.includes("insufficient funds")) {
         setError("Insufficient gas");
       } else if (err.message?.includes("Chain")) {
-        setError("Network error. Please ensure you're on Flow Testnet and try again.");
+        setError("Network error. Please ensure you're on Flow Mainnet and try again.");
       } else {
         setError(`Failed to submit score: ${err.message || "Unknown error"}`);
       }
@@ -608,11 +608,11 @@ export default function useDegenMode() {
 
     try {
       // 1. Check if we need to switch chains
-      if (chain?.id !== flowTestnet.id) {
-        console.log(`Current chain: ${chain?.id}, switching to Flow Testnet (${flowTestnet.id})`);
+      if (chain?.id !== flowMainnet.id) {
+        console.log(`Current chain: ${chain?.id}, switching to Flow Mainnet (${flowMainnet.id})`);
 
         try {
-          await switchChainAsync({ chainId: flowTestnet.id });
+          await switchChainAsync({ chainId: flowMainnet.id });
 
           // Wait for wallet client to update
           await refetchWalletClient();
@@ -621,9 +621,9 @@ export default function useDegenMode() {
           for (let i = 0; i < 30; i++) {
             await new Promise(resolve => setTimeout(resolve, 100));
             const { data: freshClient } = await refetchWalletClient();
-            if (freshClient?.chain?.id === flowTestnet.id) {
+            if (freshClient?.chain?.id === flowMainnet.id) {
               chainSwitched = true;
-              console.log("✅ Wallet client confirmed on Flow Testnet");
+              console.log("✅ Wallet client confirmed on Flow Mainnet");
               break;
             }
           }
@@ -638,7 +638,7 @@ export default function useDegenMode() {
           if (switchErr.message?.includes("rejected") || switchErr.message?.includes("User rejected")) {
             setError("Network switch cancelled");
           } else {
-            setError("Failed to switch to Flow Testnet network. Please switch manually.");
+            setError("Failed to switch to Flow Mainnet network. Please switch manually.");
           }
           setIsClaiming(false);
           return false;
@@ -655,7 +655,7 @@ export default function useDegenMode() {
       }
 
       // 3. Verify chain
-      if (freshWalletClient.chain?.id !== flowTestnet.id) {
+      if (freshWalletClient.chain?.id !== flowMainnet.id) {
         setError(`Chain mismatch. Please try again.`);
         setIsClaiming(false);
         return false;
@@ -668,7 +668,7 @@ export default function useDegenMode() {
         abi: degenAbi,
         functionName: "claimReward",
         args: [BigInt(day)],
-        chain: flowTestnet,
+        chain: flowMainnet,
       });
 
       const hash = await freshWalletClient.writeContract(request);
@@ -700,7 +700,7 @@ export default function useDegenMode() {
       } else if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
         setError("Transaction cancelled");
       } else if (err.message?.includes("Chain")) {
-        setError("Network error. Please ensure you're on Flow Testnet and try again.");
+        setError("Network error. Please ensure you're on Flow Mainnet and try again.");
       } else {
         setError("Failed to claim reward");
       }

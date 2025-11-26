@@ -29,9 +29,9 @@ function metaMaskConnector() {
       return await provider.request({ method: 'eth_accounts' })
     },
     async getChainId() {
-      if (typeof window === 'undefined') return flowTestnet.id
+      if (typeof window === 'undefined') return flowMainnet.id
       const provider = (window as any).ethereum
-      if (!provider) return flowTestnet.id
+      if (!provider) return flowMainnet.id
       const chainId = await provider.request({ method: 'eth_chainId' })
       return parseInt(chainId, 16)
     },

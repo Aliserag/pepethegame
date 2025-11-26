@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { usePublicClient } from "wagmi";
-import { flowTestnet } from "wagmi/chains";
+import { flowMainnet } from "wagmi/chains";
 import leaderboardAbi from "../lib/FlowPepeLeaderboard.abi.json";
 
 interface LeaderboardEntry {
@@ -16,9 +16,9 @@ interface LeaderboardProps {
 const Leaderboard: React.FC<LeaderboardProps> = ({ refreshTrigger }) => {
   const [topScores, setTopScores] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const publicClient = usePublicClient({ chainId: flowTestnet.id });
+  const publicClient = usePublicClient({ chainId: flowMainnet.id });
 
-  // Contract address for Flow Testnet (to be deployed)
+  // Contract address for Flow Mainnet
   const contractAddress = (process.env.NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS || "") as `0x${string}`;
 
   const loadLeaderboard = async () => {

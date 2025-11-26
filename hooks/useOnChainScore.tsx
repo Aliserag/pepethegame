@@ -1,17 +1,17 @@
 import { useState, useCallback } from "react";
 import { useAccount, usePublicClient, useWalletClient, useSwitchChain } from "wagmi";
-import { flowTestnet } from "wagmi/chains";
+import { flowMainnet } from "wagmi/chains";
 import leaderboardAbi from "../lib/FlowPepeLeaderboard.abi.json";
 
 export default function useOnChainScore() {
   const { address, isConnected, chainId } = useAccount();
-  const publicClient = usePublicClient({ chainId: flowTestnet.id });
+  const publicClient = usePublicClient({ chainId: flowMainnet.id });
   const { data: walletClient } = useWalletClient(); // Don't specify chainId here - get client for current chain
   const { switchChainAsync } = useSwitchChain();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
-  // Contract address for Flow Testnet (to be deployed)
+  // Contract address for Flow Mainnet
   const contractAddress = (process.env.NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS || "") as `0x${string}`;
 
   /**
@@ -47,7 +47,7 @@ export default function useOnChainScore() {
       console.log("isConnected:", isConnected);
       console.log("address:", address);
       console.log("chainId:", chainId);
-      console.log("expected chainId:", flowTestnet.id);
+      console.log("expected chainId:", flowMainnet.id);
       console.log("walletClient:", !!walletClient);
       console.log("publicClient:", !!publicClient);
       console.log("contractAddress:", contractAddress);
@@ -62,13 +62,13 @@ export default function useOnChainScore() {
         return false;
       }
 
-      // Auto-switch to Flow Testnet if on wrong network
-      if (chainId !== flowTestnet.id) {
-        console.log(`Wrong network detected (${chainId}), switching to Flow Testnet...`);
-        setSubmissionError("Switching to Flow Testnet network...");
+      // Auto-switch to Flow Mainnet if on wrong network
+      if (chainId !== flowMainnet.id) {
+        console.log(`Wrong network detected (${chainId}), switching to Flow Mainnet...`);
+        setSubmissionError("Switching to Flow Mainnet network...");
         try {
-          await switchChainAsync({ chainId: flowTestnet.id });
-          console.log("Successfully switched to Flow Testnet");
+          await switchChainAsync({ chainId: flowMainnet.id });
+          console.log("Successfully switched to Flow Mainnet");
           setSubmissionError(null); // Clear the switching message
 
           // Wait a moment for wallet client to update after chain switch
@@ -76,9 +76,9 @@ export default function useOnChainScore() {
         } catch (error: any) {
           console.error("Error switching chain:", error);
           if (error.message?.includes("rejected") || error.message?.includes("denied")) {
-            setSubmissionError(`Network switch cancelled. Please switch to Flow Testnet in your wallet.`);
+            setSubmissionError(`Network switch cancelled. Please switch to Flow Mainnet in your wallet.`);
           } else {
-            setSubmissionError(`Failed to switch network. Please switch to Flow Testnet manually in your wallet.`);
+            setSubmissionError(`Failed to switch network. Please switch to Flow Mainnet manually in your wallet.`);
           }
           setIsSubmitting(false);
           return false;
@@ -124,7 +124,7 @@ export default function useOnChainScore() {
           abi: leaderboardAbi,
           functionName: "submitScore",
           args: [BigInt(score)],
-          chain: flowTestnet, // Explicitly set chain to Flow Testnet
+          chain: flowMainnet, // Explicitly set chain to Flow Mainnet
         });
 
         const hash = await walletClient.writeContract(request);
