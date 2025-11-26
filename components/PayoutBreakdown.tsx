@@ -113,7 +113,7 @@ const PayoutBreakdown: React.FC<PayoutBreakdownProps> = ({
               className="text-green-300 text-lg font-bold text-center"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
-              ~{playerPayout.toFixed(4)} ETH
+              ~{playerPayout.toFixed(4)} FLOW
             </div>
           ) : (
             <div className="text-center">
@@ -158,7 +158,7 @@ const PayoutBreakdown: React.FC<PayoutBreakdownProps> = ({
                   className={`${example.color} text-sm font-bold`}
                   style={{ fontFamily: "'Press Start 2P', cursive" }}
                 >
-                  {payout > 0 ? `~${payout.toFixed(4)} ETH` : "—"}
+                  {payout > 0 ? `~${payout.toFixed(4)} FLOW` : "—"}
                 </div>
               </div>
             </div>
@@ -171,13 +171,13 @@ const PayoutBreakdown: React.FC<PayoutBreakdownProps> = ({
         <div className="flex justify-between items-center text-xs">
           <span className="text-gray-400">Total Pool</span>
           <span className="text-green-400 font-bold">
-            {dayStats.totalPool} ETH
+            {dayStats.totalPool} FLOW
           </span>
         </div>
         <div className="flex justify-between items-center text-xs mt-1">
           <span className="text-gray-400">Max Payout (50%)</span>
           <span className="text-yellow-300 font-bold">
-            {(poolAmount * 0.5).toFixed(4)} ETH
+            {(poolAmount * 0.5).toFixed(4)} FLOW
           </span>
         </div>
       </div>

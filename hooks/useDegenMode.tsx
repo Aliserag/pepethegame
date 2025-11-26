@@ -1,14 +1,14 @@
 import { useState, useCallback, useEffect } from "react";
 import { useAccount, usePublicClient, useWalletClient, useSwitchChain } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
+import { flowTestnet } from "wagmi/chains";
 import { parseEther, formatEther } from "viem";
 import degenAbi from "../lib/FlowPepeDegen.abi.json";
 
 export default function useDegenMode() {
   const { address, isConnected, chain, status } = useAccount();
-  const publicClient = usePublicClient({ chainId: baseSepolia.id });
+  const publicClient = usePublicClient({ chainId: flowTestnet.id });
   const { data: walletClient, refetch: refetchWalletClient } = useWalletClient({
-    chainId: baseSepolia.id
+    chainId: flowTestnet.id
   });
   const { switchChainAsync } = useSwitchChain();
 
@@ -44,10 +44,10 @@ export default function useDegenMode() {
   } | null>(null);
   const [qualifiedCount, setQualifiedCount] = useState<number>(0);
 
-  // Contract address - updated to new weight-based contract
+  // Contract address - for Flow Testnet (to be deployed)
   const contractAddress = (
     process.env.NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS ||
-    "0x2bc70abb0ecebd0660429251d9790a712d12ce13" // FlowPepeDegen (weight-based) on Base Sepolia
+    "" // FlowPepeDegen on Flow Testnet
   ) as `0x${string}`;
 
   console.log("DEGEN Contract Address:", contractAddress);
@@ -86,7 +86,7 @@ export default function useDegenMode() {
         }) as bigint;
         console.log("Current pool (bigint):", pool.toString());
         const poolFormatted = formatEther(pool);
-        console.log("Current pool (ETH):", poolFormatted);
+        console.log("Current pool (FLOW):", poolFormatted);
         setCurrentPool(poolFormatted);
       } catch (poolErr) {
         console.error("Error loading current pool:", poolErr);
@@ -372,12 +372,12 @@ export default function useDegenMode() {
       }
 
       // 2. Check if we need to switch chains
-      if (chain?.id !== baseSepolia.id) {
-        setProcessingMessage("Switching to Base Sepolia network...");
-        console.log(`Current chain: ${chain?.id}, switching to Base Sepolia (${baseSepolia.id})`);
+      if (chain?.id !== flowTestnet.id) {
+        setProcessingMessage("Switching to Flow Testnet network...");
+        console.log(`Current chain: ${chain?.id}, switching to Flow Testnet (${flowTestnet.id})`);
 
         try {
-          await switchChainAsync({ chainId: baseSepolia.id });
+          await switchChainAsync({ chainId: flowTestnet.id });
 
           // 3. Refetch wallet client to get updated client for new chain
           setProcessingMessage("Verifying network switch...");
@@ -388,9 +388,9 @@ export default function useDegenMode() {
           for (let i = 0; i < 30; i++) { // 3 seconds max (30 * 100ms)
             await new Promise(resolve => setTimeout(resolve, 100));
             const { data: freshClient } = await refetchWalletClient();
-            if (freshClient?.chain?.id === baseSepolia.id) {
+            if (freshClient?.chain?.id === flowTestnet.id) {
               chainSwitched = true;
-              console.log("✅ Wallet client confirmed on Base Sepolia");
+              console.log("✅ Wallet client confirmed on Flow Testnet");
               break;
             }
           }
@@ -409,7 +409,7 @@ export default function useDegenMode() {
           if (switchErr.message?.includes("rejected") || switchErr.message?.includes("User rejected")) {
             setError("Network switch cancelled");
           } else {
-            setError("Failed to switch to Base Sepolia network. Please switch manually.");
+            setError("Failed to switch to Flow Testnet network. Please switch manually.");
           }
           setIsEntering(false);
           setProcessingMessage(null);
@@ -428,8 +428,8 @@ export default function useDegenMode() {
       }
 
       // 6. Verify we're on the correct chain before transaction
-      if (freshWalletClient.chain?.id !== baseSepolia.id) {
-        setError(`Chain mismatch detected (on ${freshWalletClient.chain?.id}, expected ${baseSepolia.id}). Please try again.`);
+      if (freshWalletClient.chain?.id !== flowTestnet.id) {
+        setError(`Chain mismatch detected (on ${freshWalletClient.chain?.id}, expected ${flowTestnet.id}). Please try again.`);
         setIsEntering(false);
         setProcessingMessage(null);
         return false;
@@ -437,7 +437,7 @@ export default function useDegenMode() {
 
       // 7. Simulate and execute transaction
       const fee = parseEther(entryFee);
-      console.log("Entering game with fee:", entryFee, "ETH (", fee.toString(), "wei)");
+      console.log("Entering game with fee:", entryFee, "FLOW (", fee.toString(), "wei)");
       console.log("Contract address:", contractAddress);
       console.log("Wallet address:", address);
 
@@ -450,7 +450,7 @@ export default function useDegenMode() {
         abi: degenAbi,
         functionName: "enterGame",
         value: fee,
-        chain: baseSepolia,
+        chain: flowTestnet,
       });
 
       setProcessingMessage("Confirm transaction in wallet...");
@@ -487,9 +487,9 @@ export default function useDegenMode() {
       } else if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
         setError("Transaction cancelled");
       } else if (err.message?.includes("insufficient funds")) {
-        setError("Insufficient ETH balance");
+        setError("Insufficient FLOW balance");
       } else if (err.message?.includes("Chain")) {
-        setError("Network error. Please ensure you're on Base Sepolia and try again.");
+        setError("Network error. Please ensure you're on Flow Testnet and try again.");
       } else {
         setError(`Failed to enter game: ${err.message || "Unknown error"}`);
       }
@@ -528,8 +528,8 @@ export default function useDegenMode() {
       }
 
       // 2. Verify we're on the correct chain
-      if (freshWalletClient.chain?.id !== baseSepolia.id) {
-        setError(`Chain mismatch detected. Please switch to Base Sepolia and try again.`);
+      if (freshWalletClient.chain?.id !== flowTestnet.id) {
+        setError(`Chain mismatch detected. Please switch to Flow Testnet and try again.`);
         setIsSubmitting(false);
         setProcessingMessage(null);
         return false;
@@ -544,7 +544,7 @@ export default function useDegenMode() {
         abi: degenAbi,
         functionName: "submitScore",
         args: [BigInt(score)],
-        chain: baseSepolia,
+        chain: flowTestnet,
       });
 
       setProcessingMessage("Confirm transaction in wallet...");
@@ -585,7 +585,7 @@ export default function useDegenMode() {
       } else if (err.message?.includes("insufficient funds")) {
         setError("Insufficient gas");
       } else if (err.message?.includes("Chain")) {
-        setError("Network error. Please ensure you're on Base Sepolia and try again.");
+        setError("Network error. Please ensure you're on Flow Testnet and try again.");
       } else {
         setError(`Failed to submit score: ${err.message || "Unknown error"}`);
       }
@@ -608,11 +608,11 @@ export default function useDegenMode() {
 
     try {
       // 1. Check if we need to switch chains
-      if (chain?.id !== baseSepolia.id) {
-        console.log(`Current chain: ${chain?.id}, switching to Base Sepolia (${baseSepolia.id})`);
+      if (chain?.id !== flowTestnet.id) {
+        console.log(`Current chain: ${chain?.id}, switching to Flow Testnet (${flowTestnet.id})`);
 
         try {
-          await switchChainAsync({ chainId: baseSepolia.id });
+          await switchChainAsync({ chainId: flowTestnet.id });
 
           // Wait for wallet client to update
           await refetchWalletClient();
@@ -621,9 +621,9 @@ export default function useDegenMode() {
           for (let i = 0; i < 30; i++) {
             await new Promise(resolve => setTimeout(resolve, 100));
             const { data: freshClient } = await refetchWalletClient();
-            if (freshClient?.chain?.id === baseSepolia.id) {
+            if (freshClient?.chain?.id === flowTestnet.id) {
               chainSwitched = true;
-              console.log("✅ Wallet client confirmed on Base Sepolia");
+              console.log("✅ Wallet client confirmed on Flow Testnet");
               break;
             }
           }
@@ -638,7 +638,7 @@ export default function useDegenMode() {
           if (switchErr.message?.includes("rejected") || switchErr.message?.includes("User rejected")) {
             setError("Network switch cancelled");
           } else {
-            setError("Failed to switch to Base Sepolia network. Please switch manually.");
+            setError("Failed to switch to Flow Testnet network. Please switch manually.");
           }
           setIsClaiming(false);
           return false;
@@ -655,7 +655,7 @@ export default function useDegenMode() {
       }
 
       // 3. Verify chain
-      if (freshWalletClient.chain?.id !== baseSepolia.id) {
+      if (freshWalletClient.chain?.id !== flowTestnet.id) {
         setError(`Chain mismatch. Please try again.`);
         setIsClaiming(false);
         return false;
@@ -668,13 +668,13 @@ export default function useDegenMode() {
         abi: degenAbi,
         functionName: "claimReward",
         args: [BigInt(day)],
-        chain: baseSepolia,
+        chain: flowTestnet,
       });
 
       const hash = await freshWalletClient.writeContract(request);
 
       console.log("Claim transaction sent:", hash);
-      console.log("🔗 View on block explorer: https://sepolia.basescan.org/tx/" + hash);
+      console.log("🔗 View on block explorer: https://evm-testnet.flowscan.io/tx/" + hash);
 
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       console.log("Transaction receipt:", receipt);
@@ -700,7 +700,7 @@ export default function useDegenMode() {
       } else if (err.message?.includes("rejected") || err.message?.includes("User rejected")) {
         setError("Transaction cancelled");
       } else if (err.message?.includes("Chain")) {
-        setError("Network error. Please ensure you're on Base Sepolia and try again.");
+        setError("Network error. Please ensure you're on Flow Testnet and try again.");
       } else {
         setError("Failed to claim reward");
       }

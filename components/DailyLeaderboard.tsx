@@ -142,7 +142,7 @@ const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
               className="text-lg text-green-400 font-bold"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
             >
-              {dayStats.totalPool} ETH
+              {dayStats.totalPool} FLOW
             </span>
           </div>
         </div>

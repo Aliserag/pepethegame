@@ -16,9 +16,9 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ hallOfFame, onRefresh }) => {
 
   function formatEarnings(earnings: string) {
     const value = parseFloat(earnings);
-    if (value === 0) return "0 ETH";
-    if (value < 0.0001) return "< 0.0001 ETH";
-    return `${value.toFixed(4)} ETH`;
+    if (value === 0) return "0 FLOW";
+    if (value < 0.0001) return "< 0.0001 FLOW";
+    return `${value.toFixed(4)} FLOW`;
   }
 
   return (

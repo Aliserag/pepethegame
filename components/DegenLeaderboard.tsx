@@ -128,7 +128,7 @@ const DegenLeaderboard: React.FC<DegenLeaderboardProps> = ({
                       >
                         {parseFloat(entry.reward).toFixed(4)}
                       </div>
-                      <div className="text-xs text-gray-400">ETH</div>
+                      <div className="text-xs text-gray-400">FLOW</div>
                     </div>
                   </div>
                 </div>
@@ -171,7 +171,7 @@ const DegenLeaderboard: React.FC<DegenLeaderboardProps> = ({
                     >
                       {parseFloat(userEntry.reward).toFixed(4)}
                     </div>
-                    <div className="text-xs text-gray-400">ETH</div>
+                    <div className="text-xs text-gray-400">FLOW</div>
                   </div>
                 </div>
               </div>

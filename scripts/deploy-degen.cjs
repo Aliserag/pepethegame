@@ -3,15 +3,15 @@ const path = require('path');
 const solc = require('solc');
 const { createWalletClient, createPublicClient, http } = require('viem');
 const { privateKeyToAccount } = require('viem/accounts');
-const { baseSepolia, base } = require('viem/chains');
+const { flowTestnet, flowMainnet } = require('viem/chains');
 require('dotenv').config();
 
 async function main() {
   console.log('🚀 Deploying FlowPepeDegen contract...\n');
 
-  // Get network from command line (default to baseSepolia)
-  const network = process.argv[2] || 'baseSepolia';
-  const chain = network === 'base' ? base : baseSepolia;
+  // Get network from command line (default to flowTestnet)
+  const network = process.argv[2] || 'flowTestnet';
+  const chain = network === 'flowMainnet' ? flowMainnet : flowTestnet;
 
   console.log(`Network: ${network} (Chain ID: ${chain.id})`);
 
@@ -96,11 +96,11 @@ async function main() {
 
   // Check balance
   const balance = await publicClient.getBalance({ address: account.address });
-  console.log(`Balance: ${(Number(balance) / 1e18).toFixed(4)} ETH\n`);
+  console.log(`Balance: ${(Number(balance) / 1e18).toFixed(4)} FLOW\n`);
 
   if (balance === 0n) {
     console.error('❌ Error: Account has zero balance. Please fund your account first.');
-    console.error(`   You can get testnet ETH from: https://www.coinbase.com/faucets/base-ethereum-goerli-faucet`);
+    console.error(`   You can get testnet FLOW from: https://faucet.flow.com/`);
     process.exit(1);
   }
 
@@ -162,10 +162,10 @@ async function main() {
     console.log('\n✨ Add this to your .env file:');
     console.log(`NEXT_PUBLIC_DEGEN_CONTRACT_ADDRESS=${receipt.contractAddress}`);
 
-    if (network === 'baseSepolia') {
-      console.log(`\n🔍 View on BaseScan: https://sepolia.basescan.org/address/${receipt.contractAddress}`);
+    if (network === 'flowTestnet') {
+      console.log(`\n🔍 View on FlowScan: https://evm-testnet.flowscan.io/address/${receipt.contractAddress}`);
     } else {
-      console.log(`\n🔍 View on BaseScan: https://basescan.org/address/${receipt.contractAddress}`);
+      console.log(`\n🔍 View on FlowScan: https://evm.flowscan.io/address/${receipt.contractAddress}`);
     }
 
   } else {

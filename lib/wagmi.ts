@@ -1,8 +1,8 @@
 import { http, createConfig, createStorage, noopStorage, createConnector } from 'wagmi'
-import { base, baseSepolia } from 'wagmi/chains'
+import { flowMainnet, flowTestnet } from 'wagmi/chains'
 import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector'
 
-// Simple MetaMask/injected wallet connector
+// Simple MetaMask/injected wallet connector for Flow
 function metaMaskConnector() {
   return createConnector((config) => ({
     id: 'injected',
@@ -29,9 +29,9 @@ function metaMaskConnector() {
       return await provider.request({ method: 'eth_accounts' })
     },
     async getChainId() {
-      if (typeof window === 'undefined') return baseSepolia.id
+      if (typeof window === 'undefined') return flowTestnet.id
       const provider = (window as any).ethereum
-      if (!provider) return baseSepolia.id
+      if (!provider) return flowTestnet.id
       const chainId = await provider.request({ method: 'eth_chainId' })
       return parseInt(chainId, 16)
     },
@@ -49,10 +49,31 @@ function metaMaskConnector() {
       const provider = (window as any).ethereum
       if (!provider) throw new Error('No injected provider found')
 
-      await provider.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: `0x${chainId.toString(16)}` }]
-      })
+      try {
+        await provider.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: `0x${chainId.toString(16)}` }]
+        })
+      } catch (switchError: any) {
+        // This error code indicates the chain has not been added to MetaMask
+        if (switchError.code === 4902) {
+          const chain = config.chains.find(c => c.id === chainId)
+          if (chain) {
+            await provider.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: `0x${chainId.toString(16)}`,
+                chainName: chain.name,
+                nativeCurrency: chain.nativeCurrency,
+                rpcUrls: [chain.rpcUrls.default.http[0]],
+                blockExplorerUrls: chain.blockExplorers ? [chain.blockExplorers.default.url] : undefined
+              }]
+            })
+          }
+        } else {
+          throw switchError
+        }
+      }
       return config.chains.find(c => c.id === chainId)!
     },
     onAccountsChanged(accounts) {
@@ -71,16 +92,16 @@ function metaMaskConnector() {
   }))
 }
 
-// Support both Farcaster Mini App and browser wallets
+// Support both Farcaster Mini App and browser wallets on Flow
 export const config = createConfig({
-  chains: [base, baseSepolia],
+  chains: [flowMainnet, flowTestnet],
   connectors: [
     farcasterMiniApp(),
     metaMaskConnector(),
   ],
   transports: {
-    [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org'),
-    [baseSepolia.id]: http(process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org'),
+    [flowMainnet.id]: http(process.env.NEXT_PUBLIC_FLOW_RPC || 'https://mainnet.evm.nodes.onflow.org'),
+    [flowTestnet.id]: http(process.env.NEXT_PUBLIC_FLOW_TESTNET_RPC || 'https://testnet.evm.nodes.onflow.org'),
   },
   // Prevent auto-reconnection and wallet polling
   ssr: true,

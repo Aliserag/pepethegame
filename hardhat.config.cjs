@@ -12,19 +12,19 @@ module.exports = {
     },
   },
   networks: {
-    baseSepolia: {
-      url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
+    flowTestnet: {
+      url: process.env.NEXT_PUBLIC_FLOW_TESTNET_RPC || "https://testnet.evm.nodes.onflow.org",
       accounts: process.env.DEPLOYER_PRIVATE_KEY
         ? [process.env.DEPLOYER_PRIVATE_KEY]
         : [],
-      chainId: 84532,
+      chainId: 545,
     },
-    base: {
-      url: process.env.BASE_RPC_URL || "https://mainnet.base.org",
+    flowMainnet: {
+      url: process.env.NEXT_PUBLIC_FLOW_RPC || "https://mainnet.evm.nodes.onflow.org",
       accounts: process.env.DEPLOYER_PRIVATE_KEY
         ? [process.env.DEPLOYER_PRIVATE_KEY]
         : [],
-      chainId: 8453,
+      chainId: 747,
     },
     hardhat: {
       chainId: 31337,

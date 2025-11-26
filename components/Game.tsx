@@ -383,7 +383,7 @@ export default function Game() {
                   } text-white font-bold py-3 px-6 rounded-lg text-sm w-full transition-all`}
                   style={{ fontFamily: "'Press Start 2P', cursive" }}
                 >
-                  {isEntering ? "Processing..." : `🎮 Pay ${entryFee} ETH to Enter`}
+                  {isEntering ? "Processing..." : `🎮 Pay ${entryFee} FLOW to Enter`}
                 </button>
                 {degenProcessingMessage && (
                   <div className="text-blue-400 text-xs text-center animate-pulse bg-blue-900 bg-opacity-30 p-2 rounded">
@@ -426,7 +426,7 @@ export default function Game() {
                 <div className="bg-gray-700 p-3 rounded-lg">
                   <div className="text-gray-400 text-xs mb-1">Prize Pool</div>
                   <div className="text-white text-xl font-bold">
-                    {currentPool} ETH
+                    {currentPool} FLOW
                   </div>
                 </div>
 
@@ -441,7 +441,7 @@ export default function Game() {
                         <span className="text-2xl">🏆</span>
                       </div>
                       <div className="text-yellow-300 text-lg font-bold text-center mb-2">
-                        {claimableRewards.reduce((sum, r) => sum + parseFloat(r.amount), 0).toFixed(4)} ETH
+                        {claimableRewards.reduce((sum, r) => sum + parseFloat(r.amount), 0).toFixed(4)} FLOW
                       </div>
                       <div className="text-gray-400 text-[10px] text-center mb-3">
                         {claimableRewards.length} reward{claimableRewards.length > 1 ? 's' : ''} ready to claim
@@ -466,7 +466,7 @@ export default function Game() {
                             } font-bold py-2 px-4 rounded-lg text-[10px] transition-all`}
                             style={{ fontFamily: "'Press Start 2P', cursive" }}
                           >
-                            {isClaiming ? "Processing..." : `💰 Claim Day ${reward.day}: ${parseFloat(reward.amount).toFixed(4)} ETH`}
+                            {isClaiming ? "Processing..." : `💰 Claim Day ${reward.day}: ${parseFloat(reward.amount).toFixed(4)} FLOW`}
                           </button>
                         ))}
 
@@ -684,7 +684,7 @@ export default function Game() {
                     {potentialReward !== "0" && (
                       <div className="text-center">
                         <div className="text-gray-400 text-xs mb-1">Potential Earnings</div>
-                        <div className="text-yellow-300 text-2xl font-bold">{potentialReward} ETH</div>
+                        <div className="text-yellow-300 text-2xl font-bold">{potentialReward} FLOW</div>
                         <div className="text-gray-500 text-xs mt-1">Claimable after period ends</div>
                       </div>
                     )}
@@ -751,7 +751,7 @@ export default function Game() {
                             <div className="flex-1 text-right">
                               <div className="text-green-300 text-xs mb-1">Anticipated Earnings</div>
                               <div className="text-yellow-300 text-2xl font-bold" style={{ fontFamily: "'Press Start 2P', cursive" }}>
-                                {potentialReward || "0"} ETH
+                                {potentialReward || "0"} FLOW
                               </div>
                             </div>
                           </div>

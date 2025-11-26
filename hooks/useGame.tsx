@@ -307,15 +307,22 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
     const groundImpact =
       draft.bird.position.y + draft.bird.size.height >=
       draft.window.height + draft.pipe.tolerance;
+
+    // The visual pipe image is 50% of the container width (w-1/2 in Pipes.tsx)
+    // and centered, so we need to calculate the actual visual pipe boundaries
+    const visualPipeWidth = draft.pipe.width * 0.5;
+    const pipeOffset = (draft.pipe.width - visualPipeWidth) / 2; // Center offset
+
     const impactablePipes = draft.pipes.filter((pipe) => {
-      return (
-        pipe.top.position.x <
-          draft.bird.position.x -
-            draft.pipe.tolerance +
-            draft.bird.size.width &&
-        pipe.top.position.x + pipe.top.size.width >
-          draft.bird.position.x + draft.pipe.tolerance
-      );
+      // Calculate actual visual pipe boundaries (centered within container)
+      const visualPipeLeft = pipe.top.position.x + pipeOffset;
+      const visualPipeRight = visualPipeLeft + visualPipeWidth;
+
+      const birdLeft = draft.bird.position.x + draft.pipe.tolerance;
+      const birdRight = draft.bird.position.x + draft.bird.size.width - draft.pipe.tolerance;
+
+      // Check horizontal overlap with visual pipe (not the container)
+      return birdRight > visualPipeLeft && birdLeft < visualPipeRight;
     });
     const pipeImpact = impactablePipes.some((pipe) => {
       const topPipe = pipe.top.position.y + pipe.top.size.height;

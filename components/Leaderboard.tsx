@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { usePublicClient } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
+import { flowTestnet } from "wagmi/chains";
 import leaderboardAbi from "../lib/FlowPepeLeaderboard.abi.json";
 
 interface LeaderboardEntry {
@@ -16,10 +16,10 @@ interface LeaderboardProps {
 const Leaderboard: React.FC<LeaderboardProps> = ({ refreshTrigger }) => {
   const [topScores, setTopScores] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const publicClient = usePublicClient({ chainId: baseSepolia.id });
+  const publicClient = usePublicClient({ chainId: flowTestnet.id });
 
-  // Hardcode the contract address as fallback if env var doesn't work
-  const contractAddress = (process.env.NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS || "0xb5060b6a8a2c59f2b161f7ad2591fcafdebfb00c") as `0x${string}`;
+  // Contract address for Flow Testnet (to be deployed)
+  const contractAddress = (process.env.NEXT_PUBLIC_LEADERBOARD_CONTRACT_ADDRESS || "") as `0x${string}`;
 
   const loadLeaderboard = async () => {
     if (!publicClient || !contractAddress) {
