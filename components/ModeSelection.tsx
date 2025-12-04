@@ -62,10 +62,10 @@ const ModeSelection: React.FC<ModeSelectionProps> = ({ onSelectMode }) => {
               DEGEN Mode
             </h2>
             <p className="text-green-200 text-xs sm:text-sm mb-2 sm:mb-3">
-              Play to earn! $5 entry, prize pool!
+              Play to earn! $ entry, prize pool!
             </p>
             <ul className="text-left text-green-100 text-xs space-y-1 mb-3 sm:mb-4">
-              <li>✓ $5 entry/play</li>
+              <li>✓ $ entry/play</li>
               <li>✓ Win from pool</li>
               <li>✓ Exp. multipliers</li>
             </ul>
