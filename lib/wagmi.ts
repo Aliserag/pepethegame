@@ -6,18 +6,22 @@ import {
   walletConnectWallet,
   coinbaseWallet,
   rainbowWallet,
+  injectedWallet,
 } from '@rainbow-me/rainbowkit/wallets'
 
+// WalletConnect Cloud project ID - required for RainbowKit v2
+// Set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID in Vercel environment variables
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || ''
 
-const connectors = connectorsForWallets(
+const connectors = projectId ? connectorsForWallets(
   [
     {
       groupName: 'Popular',
       wallets: [
+        injectedWallet,
         metaMaskWallet,
-        walletConnectWallet,
         coinbaseWallet,
+        walletConnectWallet,
         rainbowWallet,
       ],
     },
@@ -26,7 +30,7 @@ const connectors = connectorsForWallets(
     appName: 'FlowPepe',
     projectId,
   }
-)
+) : []
 
 export const config = createConfig({
   chains: [flowMainnet], // Only Flow Mainnet
