@@ -48,6 +48,7 @@ export default function Game() {
     hasPlayed,
     hasEntered,
     currentPool,
+    pendingRollover,
     entryFee,
     potentialReward,
     currentDay,
@@ -429,8 +430,13 @@ export default function Game() {
                 <div className="bg-gray-700 p-3 rounded-lg">
                   <div className="text-gray-400 text-xs mb-1">Prize Pool</div>
                   <div className="text-white text-xl font-bold">
-                    {currentPool} FLOW
+                    {parseFloat(currentPool) > 0 ? currentPool : pendingRollover} FLOW
                   </div>
+                  {parseFloat(currentPool) === 0 && parseFloat(pendingRollover) > 0 && (
+                    <div className="text-yellow-400 text-[10px] mt-1">
+                      (Pending rollover from yesterday)
+                    </div>
+                  )}
                 </div>
 
                 {/* Claimable Rewards Section */}

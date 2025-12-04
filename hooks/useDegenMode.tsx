@@ -21,6 +21,7 @@ export default function useDegenMode() {
   const [hasPlayed, setHasPlayed] = useState(false);
   const [hasEntered, setHasEntered] = useState(false);
   const [currentPool, setCurrentPool] = useState("0");
+  const [pendingRollover, setPendingRollover] = useState("0"); // Expected rollover from previous day
   const [entryFee, setEntryFee] = useState("0.002");
   const [potentialReward, setPotentialReward] = useState("0");
   const [currentDay, setCurrentDay] = useState(0);
@@ -50,13 +51,19 @@ export default function useDegenMode() {
     "" // FlowPepeDegen on Flow Mainnet
   ) as `0x${string}`;
 
-  console.log("DEGEN Contract Address:", contractAddress);
+  // Check if contract address is valid (not empty and starts with 0x)
+  const isValidContractAddress = contractAddress &&
+    contractAddress.length === 42 &&
+    contractAddress.startsWith("0x");
+
+  console.log("DEGEN Contract Address:", contractAddress, "Valid:", isValidContractAddress);
 
   /**
    * Load initial data
    */
   const loadData = useCallback(async () => {
-    if (!publicClient || !address || contractAddress === "0x0000000000000000000000000000000000000000") {
+    if (!publicClient || !address || !isValidContractAddress) {
+      console.warn("Cannot load DEGEN data: missing publicClient, address, or invalid contract address");
       return;
     }
 
@@ -76,6 +83,16 @@ export default function useDegenMode() {
 
       await delay(300);
 
+      // Get current day first (needed for pool calculation)
+      const day = await publicClient.readContract({
+        address: contractAddress,
+        abi: degenAbi,
+        functionName: "getCurrentDay",
+      }) as bigint;
+      setCurrentDay(Number(day));
+
+      await delay(300);
+
       // Get current pool with error handling
       try {
         console.log("Fetching current pool from contract...");
@@ -88,21 +105,51 @@ export default function useDegenMode() {
         const poolFormatted = formatEther(pool);
         console.log("Current pool (FLOW):", poolFormatted);
         setCurrentPool(poolFormatted);
+
+        // If current pool is 0 and we're not on day 0, check yesterday's pool for pending rollover
+        if (pool === BigInt(0) && Number(day) > 0) {
+          await delay(300);
+          try {
+            const yesterdayStats = await publicClient.readContract({
+              address: contractAddress,
+              abi: degenAbi,
+              functionName: "getDayStats",
+              args: [BigInt(Number(day) - 1)],
+            }) as [bigint, string, bigint, bigint, bigint];
+
+            const yesterdayPool = yesterdayStats[2]; // totalPool is index 2
+            if (yesterdayPool > BigInt(0)) {
+              // Calculate expected rollover: 15% of yesterday's pool
+              const rollover = (yesterdayPool * BigInt(1500)) / BigInt(10000);
+              const rolloverFormatted = formatEther(rollover);
+              console.log("Pending rollover from yesterday:", rolloverFormatted, "FLOW");
+              setPendingRollover(rolloverFormatted);
+
+              // Also check if it's Mega Sunday and add weekly pot
+              const weeklyPot = await publicClient.readContract({
+                address: contractAddress,
+                abi: degenAbi,
+                functionName: "getWeeklyMegaPot",
+              }) as bigint;
+
+              // Check if today is a Mega Sunday (day % 7 == 0)
+              if (Number(day) > 0 && Number(day) % 7 === 0) {
+                const totalExpected = rollover + weeklyPot;
+                console.log("Mega Sunday! Expected pool with mega pot:", formatEther(totalExpected), "FLOW");
+                setPendingRollover(formatEther(totalExpected));
+              }
+            }
+          } catch (rolloverErr) {
+            console.error("Error calculating pending rollover:", rolloverErr);
+          }
+        } else {
+          setPendingRollover("0");
+        }
       } catch (poolErr) {
         console.error("Error loading current pool:", poolErr);
         // Don't set to "0" if it fails, keep previous value or set to loading indicator
         console.warn("Failed to fetch pool, keeping previous value");
       }
-
-      await delay(300);
-
-      // Get current day
-      const day = await publicClient.readContract({
-        address: contractAddress,
-        abi: degenAbi,
-        functionName: "getCurrentDay",
-      }) as bigint;
-      setCurrentDay(Number(day));
 
       await delay(300);
 
@@ -325,27 +372,28 @@ export default function useDegenMode() {
       setError("Failed to load contract data. Please refresh.");
       setLoadingStats(false);
     }
-  }, [publicClient, address, contractAddress]);
+  }, [publicClient, address, contractAddress, isValidContractAddress]);
 
   useEffect(() => {
     console.log("=== useDegenMode useEffect Triggered ===");
     console.log("publicClient:", !!publicClient);
     console.log("address:", address);
     console.log("contractAddress:", contractAddress);
+    console.log("isValidContractAddress:", isValidContractAddress);
 
-    // Only load data if we have all required dependencies and address just became available
-    if (publicClient && address && contractAddress !== "0x0000000000000000000000000000000000000000") {
+    // Only load data if we have all required dependencies and valid contract address
+    if (publicClient && address && isValidContractAddress) {
       console.log("✅ All conditions met, calling loadData()");
       loadData();
     } else {
       console.warn("❌ Conditions not met for loadData:");
       console.warn("  - publicClient:", !!publicClient);
       console.warn("  - address:", address);
-      console.warn("  - contractAddress valid:", contractAddress !== "0x0000000000000000000000000000000000000000");
+      console.warn("  - isValidContractAddress:", isValidContractAddress);
     }
     // Deliberately NOT including loadData to prevent re-runs when publicClient reference changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address, contractAddress]);
+  }, [address, isValidContractAddress]);
 
   /**
    * Enter game (pay entry fee)
@@ -826,6 +874,7 @@ export default function useDegenMode() {
     hasPlayed,
     hasEntered,
     currentPool,
+    pendingRollover,
     entryFee,
     potentialReward,
     currentDay,
