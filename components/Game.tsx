@@ -123,12 +123,12 @@ export default function Game() {
   };
 
   const handleTryAgainClick = () => {
-    // Reset all game state first
+    // Reset game state but NOT the on-chain score (we need it for comparison)
     setFinalScore(0);
     setShowGameOver(false);
     setScoreSubmitted(false);
     setIsNewHighScore(false);
-    setCurrentOnChainScore(0);
+    // Don't reset currentOnChainScore - we need it to compare against for new high scores
     setDegenScoreSubmitted(false);
     setActiveTab("results");
     clearError();
@@ -162,14 +162,17 @@ export default function Game() {
   // Check if this is a new high score when game ends
   useEffect(() => {
     const checkHighScore = async () => {
-      if (isGameOver && isConnected && finalScore > 0) {
+      if (isGameOver && isConnected && finalScore > 0 && selectedMode === "fun") {
+        // Always fetch the latest on-chain score to compare
         const onChainScore = await getOnChainScore();
+        console.log("Checking high score - Final:", finalScore, "On-chain:", onChainScore);
         setCurrentOnChainScore(onChainScore);
+        // Only show "New High Score" if current score is strictly greater than on-chain record
         setIsNewHighScore(finalScore > onChainScore);
       }
     };
     checkHighScore();
-  }, [isGameOver, isConnected, finalScore, getOnChainScore]);
+  }, [isGameOver, isConnected, finalScore, getOnChainScore, selectedMode]);
 
   const handleSubmitOnChain = async () => {
     if (finalScore > 0 && !scoreSubmitted) {
@@ -811,6 +814,9 @@ export default function Game() {
                         claimAllRewards={claimAllRewards}
                         isClaiming={isClaiming}
                         error={degenError}
+                        currentDayReward={potentialReward}
+                        currentDayRank={playerRank?.rank}
+                        currentDay={currentDay}
                       />
                     </div>
                   )}

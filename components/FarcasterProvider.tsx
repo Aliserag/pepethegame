@@ -41,28 +41,42 @@ export const FarcasterProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const load = async () => {
       try {
-        // Initialize the Farcaster SDK
-        const context = await sdk.context;
-        setContext(context);
+        // Add timeout to prevent hanging when not in Farcaster frame
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Farcaster SDK timeout")), 2000)
+        );
 
-        // Get user information
-        if (context?.user) {
-          setUser({
-            fid: context.user.fid || null,
-            username: context.user.username || null,
-            displayName: context.user.displayName || null,
-          });
+        // Race between SDK context and timeout
+        const context = await Promise.race([
+          sdk.context,
+          timeoutPromise
+        ]).catch(() => null);
+
+        if (context) {
+          setContext(context);
+
+          // Get user information
+          if ((context as any)?.user) {
+            setUser({
+              fid: (context as any).user.fid || null,
+              username: (context as any).user.username || null,
+              displayName: (context as any).user.displayName || null,
+            });
+          }
         }
 
         setIsSDKLoaded(true);
 
-        // Signal that the app is ready
-        sdk.actions.ready();
+        // Signal that the app is ready (only if in Farcaster frame)
+        try {
+          sdk.actions.ready();
+        } catch {
+          // Ignore if not in Farcaster frame
+        }
       } catch (error) {
-        console.error("Failed to load Farcaster SDK:", error);
+        console.log("Not running in Farcaster frame, continuing without SDK");
         // Still mark as loaded to allow the app to function
         setIsSDKLoaded(true);
-        sdk.actions.ready();
       }
     };
 

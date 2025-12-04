@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import useGame from "../hooks/useGame";
 import useInterval from "../hooks/useInterval";
 
@@ -14,30 +13,28 @@ export default function Pipes() {
     <>
       {pipesArray.map((pipes, index) => (
         <>
-          <motion.div
+          <div
             key={pipes.top.key}
-            initial={pipes.top.initial}
-            animate={pipes.top.position}
             style={{
-              ...pipes.top.size,
-              rotate: 180,
+              position: 'absolute',
+              left: pipes.top.position.x,
+              top: pipes.top.position.y,
+              width: pipes.top.size.width,
+              height: pipes.top.size.height,
+              transform: 'rotate(180deg)',
             }}
-            className="absolute"
             children={<Pipe />}
-            transition={{
-              ease: "linear",
-            }}
           />
-          <motion.div
+          <div
             key={pipes.bottom.key}
-            initial={pipes.bottom.initial}
-            animate={pipes.bottom.position}
-            style={pipes.bottom.size}
-            className="absolute"
-            children={<Pipe />}
-            transition={{
-              ease: "linear",
+            style={{
+              position: 'absolute',
+              left: pipes.bottom.position.x,
+              top: pipes.bottom.position.y,
+              width: pipes.bottom.size.width,
+              height: pipes.bottom.size.height,
             }}
+            children={<Pipe />}
           />
         </>
       ))}

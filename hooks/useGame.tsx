@@ -53,8 +53,8 @@ const defaultState = {
     height: 0,
     extension: 0,
     tolerance: 35,
-    distance: 10,
-    delay: 75,
+    distance: 4, // 10px at 75ms = 4px at 30ms (same perceived speed)
+    delay: 30, // Fast updates for smooth movement and accurate collision
   },
   rounds: [],
   isStarted: false,
@@ -183,15 +183,24 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
   const multiplySpeed = (draft: StateDraft) => {
     const round = _.last(draft.rounds);
     if (round && round.score % draft.multiplier.step === 0) {
-      draft.pipe.distance = draft.pipe.distance * draft.multiplier.distance;
+      // Linear speed increase: +0.5px every step (5 points in Fun, 2 in DEGEN)
+      // Starts at 4px, caps at 25px (challenging but fair)
+      const maxSpeed = 25;
+      const increment = 0.5;
+      draft.pipe.distance = Math.min(draft.pipe.distance + increment, maxSpeed);
     }
   };
 
   // Pipe Functions
   const generatePipeExtension = (index: number, draft: StateDraft) => {
-    const odd = _.random(0, 1) === 1;
-    const randomNumber = _.random(odd ? 0.5 : 0, odd ? 1 : 0, true);
+    // Generate a random extension between 0 and pipe.extension
+    // This determines how much the top pipe extends down (and bottom pipe moves up)
+    const randomNumber = _.random(0, 1, true); // Random float between 0 and 1
     const extension = randomNumber * draft.pipe.extension;
+
+    // Calculate the gap to ensure it's always passable
+    // Gap = window.height - 2*pipe.height (constant regardless of extension)
+    // The extension just shifts both pipes up or down together
     return {
       height: draft.pipe.height + extension,
       y: draft.window.height - draft.pipe.height + extension,
@@ -202,6 +211,7 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
     const window = draft.window;
     draft.pipe.width = window.width / draft.pipes.length;
     draft.pipe.height = (1 / 3) * window.height;
+    // Start at default speed, will ramp up with score
     draft.pipe.distance = defaultState.pipe.distance;
     draft.pipe.extension = (0.5 / 3) * window.height;
     draft.pipes.forEach((pipe, index) => {
@@ -231,12 +241,16 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
   const movePipes = () => {
     setState((draft) => {
       draft.pipes.forEach((pipe, index) => {
-        if (pipe.top.position.x + pipe.top.size.width * 2 <= 0) {
+        // Use draft.pipe.width for consistency (not pipe.top.size.width which might be stale)
+        const pipeWidth = draft.pipe.width;
+        if (pipe.top.position.x + pipeWidth * 2 <= 0) {
           const { height, y } = generatePipeExtension(index, draft);
-          pipe.top.position.x = draft.pipe.width * 2 + draft.window.width;
-          pipe.bottom.position.x = draft.pipe.width * 2 + draft.window.width;
+          pipe.top.position.x = pipeWidth * 2 + draft.window.width;
+          pipe.bottom.position.x = pipeWidth * 2 + draft.window.width;
           pipe.top.size.height = height;
+          pipe.top.size.width = pipeWidth; // Ensure width stays consistent
           pipe.bottom.size.height = height;
+          pipe.bottom.size.width = pipeWidth; // Ensure width stays consistent
           pipe.bottom.position.y = y;
           pipe.top.key = v4();
           pipe.bottom.key = v4();
@@ -246,6 +260,9 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
         pipe.top.position.x -= draft.pipe.distance;
         pipe.bottom.position.x -= draft.pipe.distance;
       });
+
+      // Check collision after pipes move (critical for high-speed gameplay)
+      checkImpact(draft);
 
       return draft;
     });
@@ -304,9 +321,17 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
   const checkImpact = (draft: StateDraft) => {
+    // Safety check: ensure window dimensions are valid
+    if (draft.window.height <= 0 || draft.window.width <= 0) {
+      return;
+    }
+
     const groundImpact =
       draft.bird.position.y + draft.bird.size.height >=
       draft.window.height + draft.pipe.tolerance;
+
+    // Check if bird flew too high (ceiling impact)
+    const ceilingImpact = draft.bird.position.y < -draft.pipe.tolerance;
 
     // The visual pipe image is 50% of the container width (w-1/2 in Pipes.tsx)
     // and centered, so we need to calculate the actual visual pipe boundaries
@@ -314,6 +339,17 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
     const pipeOffset = (draft.pipe.width - visualPipeWidth) / 2; // Center offset
 
     const impactablePipes = draft.pipes.filter((pipe) => {
+      // Safety check: ensure pipe has valid dimensions
+      if (pipe.top.size.height <= 0 || pipe.top.size.width <= 0) {
+        return false;
+      }
+
+      // Skip pipes that are off-screen to the right (haven't entered play area yet)
+      // or have already passed off-screen to the left
+      if (pipe.top.position.x > draft.window.width || pipe.top.position.x + draft.pipe.width < 0) {
+        return false;
+      }
+
       // Calculate actual visual pipe boundaries (centered within container)
       const visualPipeLeft = pipe.top.position.x + pipeOffset;
       const visualPipeRight = visualPipeLeft + visualPipeWidth;
@@ -327,12 +363,19 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
     const pipeImpact = impactablePipes.some((pipe) => {
       const topPipe = pipe.top.position.y + pipe.top.size.height;
       const bottomPipe = pipe.bottom.position.y;
+
+      // Safety check: ensure there's actually a gap (bottom pipe starts below top pipe)
+      // This prevents false collisions from malformed pipe data
+      if (bottomPipe <= topPipe) {
+        return false; // Invalid pipe configuration, skip collision check
+      }
+
       const birdTop = draft.bird.position.y + draft.pipe.tolerance;
       const birdBottom =
         draft.bird.position.y + draft.bird.size.height - draft.pipe.tolerance;
       return birdTop < topPipe || birdBottom > bottomPipe;
     });
-    if (groundImpact || pipeImpact) {
+    if (groundImpact || ceilingImpact || pipeImpact) {
       draft.bird.isFlying = false;
       draft.isStarted = false;
       draft.isGameOver = true;

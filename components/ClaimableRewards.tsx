@@ -7,6 +7,10 @@ interface ClaimableRewardsProps {
   claimAllRewards: () => Promise<boolean>;
   isClaiming: boolean;
   error: string | null;
+  // Current day anticipated rewards (not yet claimable)
+  currentDayReward?: string;
+  currentDayRank?: number;
+  currentDay?: number;
 }
 
 const ClaimableRewards: React.FC<ClaimableRewardsProps> = ({
@@ -16,6 +20,9 @@ const ClaimableRewards: React.FC<ClaimableRewardsProps> = ({
   claimAllRewards,
   isClaiming,
   error,
+  currentDayReward,
+  currentDayRank,
+  currentDay,
 }) => {
 
   const [claimingDay, setClaimingDay] = useState<number | null>(null);
@@ -64,12 +71,44 @@ const ClaimableRewards: React.FC<ClaimableRewardsProps> = ({
         </p>
       </div>
 
+      {/* Current Day Anticipated Rewards Section */}
+      {currentDayReward && parseFloat(currentDayReward) > 0 && (
+        <div className="bg-gradient-to-r from-blue-900 to-indigo-900 border-2 border-blue-500 p-4 rounded mb-4">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <span className="text-xl">⏳</span>
+            <p className="text-xs text-blue-200 text-center font-bold">
+              Today's Anticipated Reward (Day {currentDay})
+            </p>
+          </div>
+          <p
+            className="text-xl text-center text-yellow-300 font-bold"
+            style={{ fontFamily: "'Press Start 2P', cursive" }}
+          >
+            {formatEarnings(currentDayReward)}
+          </p>
+          {currentDayRank && currentDayRank > 0 && (
+            <p className="text-xs text-blue-300 text-center mt-2">
+              Current Rank: #{currentDayRank}
+            </p>
+          )}
+          <p className="text-xs text-gray-400 text-center mt-2">
+            Claimable after the day ends
+          </p>
+        </div>
+      )}
+
       {/* Claimable Rewards Section */}
-      {claimableRewards.length === 0 ? (
+      {claimableRewards.length === 0 && (!currentDayReward || parseFloat(currentDayReward) === 0) ? (
         <div className="text-center py-8">
           <p className="text-gray-400 text-sm mb-2">No pending rewards</p>
           <p className="text-xs text-gray-500">
             Play DEGEN Mode and score above 80% of the high score to earn rewards! 🐸
+          </p>
+        </div>
+      ) : claimableRewards.length === 0 ? (
+        <div className="text-center py-4">
+          <p className="text-gray-500 text-xs">
+            No past rewards to claim yet
           </p>
         </div>
       ) : (
