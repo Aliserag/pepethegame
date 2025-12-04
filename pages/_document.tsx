@@ -3,14 +3,14 @@ import { Html, Head, Main, NextScript } from "next/document";
 export default function Document() {
   const miniappEmbed = {
     version: "1",
-    imageUrl: "https://www.flowpepe.com/logo.png",
+    imageUrl: "https://www.flowpepe.com/pepe.gif",
     button: {
       title: "WAGMI - Play Now! 🐸",
       action: {
         type: "launch_frame",
         name: "FlowPepe",
         url: "https://www.flowpepe.com",
-        splashImageUrl: "https://www.flowpepe.com/logo.png",
+        splashImageUrl: "https://www.flowpepe.com/pepe.gif",
         splashBackgroundColor: "#ded895",
       },
     },
@@ -59,7 +59,7 @@ export default function Document() {
           content={JSON.stringify(miniappEmbed)}
         />
         <meta property="fc:frame" content="vNext" />
-        <meta property="fc:frame:image" content="https://www.flowpepe.com/logo.png" />
+        <meta property="fc:frame:image" content="https://www.flowpepe.com/pepe.gif" />
         <meta property="fc:frame:button:1" content="Play FlowPepe" />
         <meta property="fc:frame:button:1:action" content="launch_frame" />
 
@@ -69,7 +69,7 @@ export default function Document() {
           property="og:description"
           content="Help Pepe make it through red candlestick obstacles and earn points! The ultimate crypto Flappy Bird on Base. WAGMI! 🚀"
         />
-        <meta property="og:image" content="https://www.flowpepe.com/logo.png" />
+        <meta property="og:image" content="https://www.flowpepe.com/pepe.gif" />
 
         {/* Twitter Card Tags */}
         <meta name="twitter:card" content="summary_large_image" />
@@ -78,7 +78,7 @@ export default function Document() {
           name="twitter:description"
           content="Help Pepe make it and earn points! Ultimate crypto Flappy Bird on Base. WAGMI! 🚀"
         />
-        <meta name="twitter:image" content="https://www.flowpepe.com/logo.png" />
+        <meta name="twitter:image" content="https://www.flowpepe.com/pepe.gif" />
 
         {/* Google Fonts */}
         <link
